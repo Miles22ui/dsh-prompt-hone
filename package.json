@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Repository for the dsh-prompt-polisher DSH plugin and its portable skill.",
   "scripts": {
-    "test": "node test/host.test.mjs && node test/client.test.mjs"
+    "test": "node test/host.test.mjs && node test/client.test.mjs && node test/market.test.mjs"
   },
   "engines": {
     "node": ">=20.6"

@@ -74,6 +74,12 @@ Medium rewrite:
 验收：读者能在 5 秒内知道这是什么产品、适合谁。
 ```
 
+## Related
+
+The DSH plugin [dsh-prompt-polisher](https://github.com/Miles22ui/dsh-prompt-polisher) applies these same
+rules to the composer draft, in place, with undo and a strength dial. This skill covers hosts that have no
+composer to write into.
+
 ## Boundaries
 
 - Not a copywriter: do not write marketing copy, only the prompt that produces it.

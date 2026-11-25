@@ -33,7 +33,7 @@
     }
   },
   "engines": {
-    "dsh": ">=0.2.2-rc.5"
+    "dsh": ">=0.2.2-rc.5 <0.3.0"
   },
   "keywords": [
     "dsh-plugin",

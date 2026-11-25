@@ -5,7 +5,7 @@
 
 [English](README.md)
 
-![status](https://img.shields.io/badge/tests-84%20assertions-brightgreen) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
+[![ci](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
 ## 为什么是插件，而不只是 skill
 
@@ -84,8 +84,9 @@ test/       两套零依赖测试（Host + 客户端），npm test 运行
 npm test
 ```
 
-84 项断言，零依赖、不需要 DSH 运行时：Host 套件伪造 `ctx.commands` / `ctx.llm`，客户端套件伪造
-Web 模块加载器与 React hooks。
+三套零依赖测试，不需要 DSH 运行时：Host 套件伪造 `ctx.commands` / `ctx.llm`，客户端套件伪造 Web
+模块加载器与 React hooks，另有一套仓库级守门测试盯着市场索引——版本没同步或 `commit` 过期会让 CI 变红，
+而不是悄悄装错。
 
 ## 已知限制
 
@@ -93,6 +94,8 @@ Web 模块加载器与 React hooks。
   DSH 升级可能打破它；届时插件会报「通道不可用」而不是静默失败，`engines.dsh` 会在安装时拦截不兼容版本。
 - 不保留引用胶囊，遇到就拒绝替换。
 - 每次润色都是一次真实模型请求，按量计费；草稿会发给你选中的服务商。
+- 草稿是作为 `/polish` 的参数字符串传过去的，因此**会写进会话日志**——即使你最后没有发送。这保留了
+  「模型可见即可从日志重建」这条不变量；不想让草稿留痕，就别拿机密文本点润色。
 - 诊断写入 `/tmp/prompt-polisher-trace.log`（只记字符数与错误码，不记内容），超 1 MiB 轮转。
 
 ## 发布流程（维护者）

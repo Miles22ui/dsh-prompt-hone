@@ -6,7 +6,7 @@ sentence you were about to send becomes a structured, executable prompt. Plus a 
 
 [中文说明](README.zh.md)
 
-![status](https://img.shields.io/badge/tests-84%20assertions-brightgreen) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
+[![ci](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
 ## Why a plugin, not just a skill
 
@@ -90,8 +90,9 @@ test/       two dependency-free suites (host + client), run with npm test
 npm test
 ```
 
-84 assertions, no dependencies, no DSH runtime: the Host suite fakes `ctx.commands` / `ctx.llm`, the
-client suite fakes the Web module loader and React hooks.
+Three dependency-free suites, no DSH runtime needed: the Host suite fakes `ctx.commands` / `ctx.llm`, the
+client suite fakes the Web module loader and React hooks, and a repository suite guards the market index
+against version drift (a stale `commit` or an unbumped `version` fails CI instead of installing quietly).
 
 ## Known limits
 
@@ -100,6 +101,9 @@ client suite fakes the Web module loader and React hooks.
   「通道不可用」 rather than failing silently. `engines.dsh` gates installs.
 - Reference chips are not preserved; the plugin refuses instead.
 - Each run is one real model request and is billed as such; the draft is sent to the selected provider.
+- The draft travels as a `/polish` command argument, so it is recorded in the Session log even when you
+  never send it. That keeps the auxiliary request reconstructable from the log (a DSH invariant); if you
+  would rather not have drafts persisted, do not polish confidential text.
 - Diagnostics are appended to `/tmp/prompt-polisher-trace.log` (sizes and error codes only, never text),
   rotated at 1 MiB.
 
