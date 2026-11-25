@@ -12,7 +12,7 @@
  * itself) to TRACE_FILE, so a silent stall can be located from outside the app.
  */
 import { appendFileSync, statSync, writeFileSync } from 'node:fs'
-import { STRENGTHS, buildRequest, buildUserPrompt, stripFence, SYSTEM_PROMPT } from './prompts.js'
+import { STRENGTHS, STYLE_IDS, buildRequest, buildUserPrompt, stripFence, SYSTEM_PROMPT } from './prompts.js'
 
 export const name = 'prompt-polisher'
 
@@ -101,6 +101,7 @@ export function apply(ctx, config = {}) {
     model: typeof config?.model === 'string' && config.model !== '' ? config.model : undefined,
     maxInputChars: Number.isInteger(config?.maxInputChars) ? config.maxInputChars : 6000,
     timeoutMs: Number.isInteger(config?.timeoutMs) && config.timeoutMs > 0 ? config.timeoutMs : 120000,
+    style: STYLE_IDS.includes(config?.style) ? config.style : 'general',
   }
   if ((settings.provider === undefined) !== (settings.model === undefined)) {
     ctx.logger.warn('prompt-polisher: provider and model must be set together; ignoring the partial route')
@@ -127,7 +128,7 @@ export function apply(ctx, config = {}) {
  */
 async function polish(ctx, settings, invocation) {
   try {
-    trace('handler', `chars=${String(invocation.rawInput ?? '').length}`)
+    trace('handler', `chars=${String(invocation.rawInput ?? '').length} style=${settings.style}`)
     if (String(invocation.rawInput ?? '').trim().startsWith(STATS_FLAG)) {
       const selection = resolveRoute(invocation.agent, settings)
       const sessionId = invocation.agent?.session?.id
@@ -152,7 +153,7 @@ async function polish(ctx, settings, invocation) {
         text: '[NO_MODEL] 没有可用的模型：先在输入框的模型选择器里选一个模型，或在插件配置里同时设置 provider 与 model。',
       }
     }
-    trace('route', `${route.provider}/${route.model} maxTokens=${request.maxTokens}`)
+    trace('route', `${route.provider}/${route.model} maxTokens=${request.maxTokens} style=${request.style.id}`)
     return await streamRewrite(ctx, settings, invocation, request, route)
   } catch (error) {
     trace('threw', errorText(error))
@@ -179,7 +180,9 @@ async function streamRewrite(ctx, settings, invocation, request, route) {
       provider: route.provider,
       model: route.model,
       ...(route.reasoningEffort === undefined ? {} : { reasoningEffort: route.reasoningEffort }),
-      system: SYSTEM_PROMPT,
+      system: request.style.directive === ''
+        ? SYSTEM_PROMPT
+        : `${SYSTEM_PROMPT}\n\n${request.style.directive}`,
       messages: [{ role: 'user', content: [{ type: 'text', text: buildUserPrompt(request) }] }],
       maxTokens: request.maxTokens,
       signal,

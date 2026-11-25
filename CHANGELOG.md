@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.10.0
+
+Four things borrowed from the tools that do this at scale.
+
+- **Preview before apply.** A rewrite no longer lands on its own: it opens as a line diff under the composer with
+  **Apply** / **Discard**. The inline undo chip is gone — the preview replaces it, and applied rewrites can be
+  restored from history.
+- **Style presets** (from prompt-optimizer's modes): 通用 / 社媒 / 汇报 / 代码 / 翻译 / 教学. The chip after the strength
+  dial cycles them; the Host appends the matching directive to the meta-prompt.
+- **History** (from Langfuse-style traceability): the last 8 applied rewrites with timestamps, one click to restore
+  the original.
+- **Structure self-check** (from promptfoo's "assertions, not vibes"): the preview scores output format, constraints,
+  acceptance, variables and length — no model call, so it costs nothing.
+
+The typed `/polish` path now opens the same preview instead of writing straight into the draft.
+
+
 ## 0.9.1
 
 Host failures speak the reader's language too.

@@ -9,19 +9,23 @@ function check(name, ok, detail) {
   console.log(`FAIL ${name}${detail === undefined ? '' : '\n     ' + detail}`)
 }
 
-// Minimal hook runtime: enough to render once and observe state writes.
-let slots = []
+// Minimal hook runtime. Each component gets its own slot table, exactly like
+// React: sharing one table lets a second component overwrite the first's refs.
+const hookSlots = { control: [], panel: [], card: [] }
+let activeKey = 'control'
 let cursor = 0
+function resetSlots() { hookSlots.control = []; hookSlots.panel = []; hookSlots.card = [] }
 const react = {
   createElement: (type, props, ...children) => ({ type, props: props ?? {}, children }),
-  // useRef must survive re-renders, exactly like React: keep it in the same slot table.
   useEffect: (fn) => { const cleanup = fn(); if (typeof cleanup === 'function') effectCleanups.push(cleanup) },
   useRef: (value) => {
+    const slots = hookSlots[activeKey]
     const index = cursor++
     if (!(index in slots)) slots[index] = { current: value }
     return slots[index]
   },
   useState: (initial) => {
+    const slots = hookSlots[activeKey]
     const index = cursor++
     // React calls a lazy initializer; the fake must too.
     if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial
@@ -73,8 +77,21 @@ ctx.get = name => (name === 'remote'
   ? ctx.remote
   : name === 'remote.commands' ? ctx.remote.commands : undefined)
 mod.apply(ctx)
-const registration = registrations.find(r => r.options !== undefined)
-const Control = registration.component
+const controlRegistration = registrations.find(r => r.options?.name === 'conversation.input.right')
+const panelRegistration = registrations.find(r => r.options?.name === 'conversation.composer.dock')
+const cardRegistration = registrations.find(r => r.options?.name === 'plugins.bundle.config')
+/** Bind one component to its own hook table and reset the hook cursor. */
+function bind(component, key) {
+  return function bound(props) {
+    if (typeof component !== 'function') throw new Error(`component ${key} missing`)
+    activeKey = key
+    cursor = 0
+    return component(props)
+  }
+}
+const Control = bind(controlRegistration.component, 'control')
+const Panel = panelRegistration === undefined ? undefined : bind(panelRegistration.component, 'panel')
+const Card = bind(cardRegistration?.component, 'card')
 
 function collectText(node, out = []) {
   if (node === null || node === undefined) return out
@@ -133,21 +150,59 @@ function sparkleButton(tree) {
     .includes(node.props?.['aria-label']))
 }
 
-// 1. success: replaces the draft, no error
+/** Render the dock panel for one Session. */
+function renderPanel({ draft = '把这段改得更有说服力', actions = undefined, sessionId = 'session-x' } = {}) {
+  if (typeof Panel !== 'function') throw new Error('panel not registered')
+  cursor = 0
+  return Panel({
+    useInput: selector => selector({ draft, phase: 'plain', occurrences: [] }),
+    inputActions: actions ?? { setDraft: value => setDraftCalls.push(value) },
+    sessionId,
+  })
+}
+
+/** Click the preview's Apply button, if the panel rendered one. */
+function applyPending({ draft = '把这段改得更有说服力', actions = undefined, sessionId = 'session-x' } = {}) {
+  const tree = renderPanel({ draft, actions, sessionId })
+  const button = findButton(tree, node => visibleText(node) === '应用')
+  if (button !== undefined) button.props.onClick()
+  return { tree, applied: button !== undefined }
+}
+
+/** History lives in localStorage, which the fake window exposes as `store`. */
+function storedHistory() {
+  try { return JSON.parse(store.get('prompt-hone.history') ?? '[]') } catch (_error) { return [] }
+}
+
+/** Read the panel as text. */
+function panelText(options) {
+  const tree = renderPanel(options)
+  return tree === null ? '' : visibleText(tree)
+}
+
+// 1. success opens a preview; applying writes the draft
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
   const after = render().text.join(' | ')
-  check('success replaces the draft', setDraftCalls.length === 1 && setDraftCalls[0] === '改写结果', JSON.stringify(setDraftCalls))
+  check('success does not overwrite the draft yet', setDraftCalls.length === 0, JSON.stringify(setDraftCalls))
   check('success shows no error', !after.includes('失败'), after)
-  check('sends the draft with an explicit strength flag', remoteCalls[0]?.[1] === '/polish --medium 把这段改得更有说服力', JSON.stringify(remoteCalls[0]?.[1]))
-  check('offers undo after success', after.includes('撤销'), after)
+  check('the command carries strength and style',
+    remoteCalls[0]?.[1] === '/polish --medium --style=general 把这段改得更有说服力', JSON.stringify(remoteCalls[0]?.[1]))
+
+  const preview = panelText()
+  check('the preview panel appears', preview.includes('改写预览'), preview.slice(0, 80))
+  check('the preview scores the structure', /结构自检 \d+\/5/.test(preview), preview.slice(0, 120))
+
+  applyPending()
+  check('applying writes the rewrite', setDraftCalls[0] === '改写结果', JSON.stringify(setDraftCalls))
+  check('the rewrite is remembered', storedHistory().length === 1 && storedHistory()[0].polished === '改写结果', JSON.stringify(storedHistory()).slice(0, 80))
 }
 
 // 2. envelope failure
 {
-  slots = []; setDraftCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0
   executeImpl = async () => ({ ok: false, error: { code: 'NO_AGENT', message: 'boom' } })
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
@@ -159,7 +214,7 @@ function sparkleButton(tree) {
 
 // 3. unknown command (undefined)
 {
-  slots = []
+  resetSlots()
   executeImpl = async () => undefined
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
@@ -170,7 +225,7 @@ function sparkleButton(tree) {
 
 // 4. malformed value
 {
-  slots = []
+  resetSlots()
   executeImpl = async () => ({ ok: true, value: undefined })
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
@@ -180,7 +235,7 @@ function sparkleButton(tree) {
 
 // 5. host-side handler error text
 {
-  slots = []
+  resetSlots()
   executeImpl = async () => ({ ok: true, value: { result: { kind: 'error', text: '草稿 7000 字符，超过上限 6000' } } })
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
@@ -190,7 +245,7 @@ function sparkleButton(tree) {
 
 // 6. thrown call names the step
 {
-  slots = []
+  resetSlots()
   executeImpl = async () => { throw new Error('Cannot read properties of undefined') }
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
@@ -201,17 +256,19 @@ function sparkleButton(tree) {
 
 // 6b. a raw CommandResult (no envelope) is accepted too
 {
-  slots = []; setDraftCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0
   executeImpl = async () => ({ kind: 'success', text: '裸形状结果' })
   const { tree } = render()
   await sparkleButton(tree).props.onClick()
-  check('raw result shape still replaces the draft', setDraftCalls[0] === '裸形状结果', JSON.stringify(setDraftCalls))
+  check('a raw result shape still opens a preview', panelText().includes('裸形状结果'), panelText().slice(0, 80))
+  applyPending()
+  check('applying a raw result writes the draft', setDraftCalls[0] === '裸形状结果', JSON.stringify(setDraftCalls))
   executeImpl = async () => ({ ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
 }
 
 // 7. draft edited while the model works
 {
-  slots = []; setDraftCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0
   let release
   executeImpl = () => new Promise(resolve => { release = resolve })
   const { tree } = render({ draft: '原始草稿' })
@@ -219,23 +276,25 @@ function sparkleButton(tree) {
   render({ draft: '我改成了别的' })   // user types while busy
   release({ ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
   await pending
-  check('edits made during the call are never overwritten', setDraftCalls.length === 0)
-  check('a changed draft is reported', render({ draft: '我改成了别的' }).text.join(' ').includes('草稿已改动'), render({ draft: '我改成了别的' }).text.join(' '))
+  await new Promise(resolve => setImmediate(resolve))
+  check('edits made during the call are never overwritten', setDraftCalls.length === 0, JSON.stringify(setDraftCalls))
+  check('a changed draft is reported instead of previewed',
+    render({ draft: '我改成了别的' }).text.join(' ').includes('草稿已改动'), render({ draft: '我改成了别的' }).text.join(' ').slice(0, 80))
   executeImpl = async () => ({ ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
 }
 
 // 8. missing remote namespace
 {
-  slots = []
+  resetSlots()
   const brokenControls = []
   mod.apply({
     on: () => () => {},
     slots: {
       inject: (name, callback) => { callback() },
-      register: (options, component) => { brokenControls.push(component); return () => {} },
+      register: (options, component) => { brokenControls.push({ options, component }); return () => {} },
     },
   })
-  const BrokenControl = brokenControls[0]
+  const BrokenControl = brokenControls.find(c => c.options?.name === 'conversation.input.right')?.component ?? brokenControls.at(-1)
   const renderBroken = () => {
     cursor = 0
     return collectText(BrokenControl({
@@ -259,15 +318,15 @@ function sparkleButton(tree) {
 
 // 8b. a service tracker that throws on access is reported, not swallowed
 {
-  slots = []
+  resetSlots()
   const throwingControls = []
   const throwingCtx = {
     on: () => () => {},
-    slots: { inject: (n, cb) => { cb() }, register: (o, c) => { throwingControls.push(c); return () => {} } },
+    slots: { inject: (n, cb) => { cb() }, register: (o, c) => { throwingControls.push({ options: o, component: c }); return () => {} } },
     get remote() { throw new Error('service "remote" is not available') },
   }
   mod.apply(throwingCtx)
-  const ThrowingControl = throwingControls[0]
+  const ThrowingControl = throwingControls.find(c => c.options?.name === 'conversation.input.right')?.component ?? throwingControls.at(-1)
   const makeTree = () => {
     cursor = 0
     return ThrowingControl({
@@ -284,18 +343,18 @@ function sparkleButton(tree) {
 
 // 8c. only `remote.commands` is reachable, like a namespaced Cordis service
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0
   const namespaceControls = []
   const namespaceCtx = {
     on: () => () => {},
-    slots: { inject: (n, cb) => { cb() }, register: (o, c) => { namespaceControls.push(c); return () => {} } },
+    slots: { inject: (n, cb) => { cb() }, register: (o, c) => { namespaceControls.push({ options: o, component: c }); return () => {} } },
     get: name => (name === 'remote.commands'
       ? { execute: (...args) => { remoteCalls.push(args); return executeImpl(...args) } }
       : undefined),
     inject: () => ({}),
   }
   mod.apply(namespaceCtx)
-  const NamespaceControl = namespaceControls[0]
+  const NamespaceControl = namespaceControls.find(c => c.options?.name === 'conversation.input.right')?.component ?? namespaceControls.at(-1)
   const makeTree = () => {
     cursor = 0
     return NamespaceControl({
@@ -305,12 +364,13 @@ function sparkleButton(tree) {
     })
   }
   await sparkleButton(makeTree()).props.onClick()
+  applyPending({ draft: '命名空间草稿', sessionId: 's' })
   check('a namespace-only Remote still works', setDraftCalls[0] === '改写结果', JSON.stringify(setDraftCalls))
 }
 
 // 8d. a draft with reference chips is never replaced (setDraft would drop them)
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0
   cursor = 0
   const tree = Control({
     useInput: selector => selector({ draft: '看看 @file.ts 这个', phase: 'plain', occurrences: [{ offset: 3 }] }),
@@ -330,7 +390,7 @@ function sparkleButton(tree) {
 
 // 8e. the strength chip cycles and the chosen flag is sent
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0; store.clear()
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0; store.clear()
   const makeTree = (draft) => {
     cursor = 0
     return Control({
@@ -346,12 +406,13 @@ function sparkleButton(tree) {
   check('a chosen strength is remembered', store.get('prompt-polisher.strength') === 'strong', String(store.get('prompt-polisher.strength')))
   const sparkle = sparkleButton(makeTree('草稿'))
   await sparkle.props.onClick()
-  check('the chosen strength is sent as a flag', remoteCalls[0]?.[1] === '/polish --strong 草稿', JSON.stringify(remoteCalls[0]?.[1]))
+  check('the chosen strength is sent as a flag',
+    remoteCalls[0]?.[1] === '/polish --strong --style=general 草稿', JSON.stringify(remoteCalls[0]?.[1]))
 }
 
 // 8f. a typed /polish fills an empty draft through the local completion event
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0
   const makeTree = (draft) => {
     cursor = 0
     return Control({
@@ -363,11 +424,16 @@ function sparkleButton(tree) {
   makeTree('')                                   // registers this session's writer
   check('the completion listener is installed', typeof handlers['command/executed'] === 'function')
   handlers['command/executed']('session-typed', 'polish', { kind: 'success', text: '键盘改写结果' })
-  check('a typed result fills an empty draft', setDraftCalls[0] === '键盘改写结果', JSON.stringify(setDraftCalls))
+  check('a typed result opens a preview',
+    panelText({ draft: '', sessionId: 'session-typed' }).includes('键盘改写结果'),
+    panelText({ draft: '', sessionId: 'session-typed' }).slice(0, 80))
+  applyPending({ draft: '', sessionId: 'session-typed' })
+  check('applying a typed result fills the draft', setDraftCalls[0] === '键盘改写结果', JSON.stringify(setDraftCalls))
 
-  setDraftCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0
   makeTree('我自己正在写')
   handlers['command/executed']('session-typed', 'polish', { kind: 'success', text: '不该覆盖' })
+  applyPending({ draft: '我自己正在写' })
   check('typing during the command is never overwritten', setDraftCalls.length === 0, JSON.stringify(setDraftCalls))
 
   setDraftCalls.length = 0
@@ -381,7 +447,7 @@ function sparkleButton(tree) {
 
 // 8g. a selection polishes only its span, through the editor's own undoable edit
 {
-  slots = []; store.clear(); setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); store.clear(); setDraftCalls.length = 0; remoteCalls.length = 0
   const inserts = []
   const span = { start: 4, end: 7, draftRev: 1 }
   const actions = {
@@ -391,13 +457,16 @@ function sparkleButton(tree) {
   }
   const { tree } = render({ draft: 'aaa bbb', actions })
   await sparkleButton(tree).props.onClick()
-  check('a selection sends only the selected text', remoteCalls[0]?.[1] === '/polish --medium bbb', JSON.stringify(remoteCalls[0]?.[1]))
-  check('a selection replaces its span instead of the draft', inserts.length === 1 && inserts[0][1] === span && setDraftCalls.length === 0, JSON.stringify(inserts))
+  check('a selection sends only the selected text',
+    remoteCalls[0]?.[1] === '/polish --medium --style=general bbb', JSON.stringify(remoteCalls[0]?.[1]))
+  applyPending({ draft: 'aaa bbb', actions })
+  check('a selection replaces its span instead of the draft',
+    inserts.length === 1 && inserts[0][1] === span && setDraftCalls.length === 0, JSON.stringify(inserts))
 }
 
 // 8h. a second click cancels the in-flight rewrite
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0
   executeImpl = ({ signal }) => new Promise((_resolve, reject) => {
     signal.addEventListener('abort', () => reject(new Error('aborted')))
   })
@@ -417,7 +486,7 @@ function sparkleButton(tree) {
 
 // 8i. a typed command failure is surfaced on the control
 {
-  slots = []; setDraftCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0
   const makeTree = (draft) => {
     cursor = 0
     return Control({
@@ -442,7 +511,7 @@ function sparkleButton(tree) {
 
 // 8j. the Plugins-page card
 {
-  slots = []; store.clear()
+  resetSlots(); store.clear()
   const card = registrations.find(r => r.options?.name === 'plugins.bundle.config')
   check('a settings card is registered for this bundle', card !== undefined && card.options.key === 'dsh-prompt-hone', JSON.stringify(card?.options))
   const Card = card.component
@@ -470,7 +539,7 @@ function sparkleButton(tree) {
 
 // 8k. token usage from the last call reaches the tooltip
 {
-  slots = []; setDraftCalls.length = 0; remoteCalls.length = 0
+  resetSlots(); setDraftCalls.length = 0; remoteCalls.length = 0
   executeImpl = async ({ line }) => (String(line).includes('--stats')
     ? { ok: true, value: { result: { kind: 'success', text: JSON.stringify({ usage: { inputTokens: 820, outputTokens: 460 } }) } } }
     : { ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
@@ -484,16 +553,16 @@ function sparkleButton(tree) {
 
 // 8l. A1: the copied snippet must not teach this machine's route
 {
-  slots = []; store.clear()
+  resetSlots(); store.clear()
   const card = registrations.find(r => r.options?.name === 'plugins.bundle.config')
   cursor = 0
-  const text = collectText(card.component({ view: 'page' })).join(' ')
+  const text = collectText(Card({ view: 'page' })).join(' ')
   check('the snippet carries placeholders, not a real route', !text.includes('deepseek-account') && text.includes('<你的 provider'), text.slice(0, 200))
 }
 
 // 8m. A2: a strength chosen in the card reaches the composer chip
 {
-  slots = []; store.clear()
+  resetSlots(); store.clear()
   const { tree } = render()
   const chipBefore = findButton(tree, node => (node.props?.['aria-label'] ?? '').startsWith('润色强度'))
   check('the chip starts at medium', collectText(chipBefore).join('').startsWith('中'), `label=${JSON.stringify(collectText(chipBefore).join(''))} aria=${chipBefore.props?.['aria-label']}`)
@@ -504,7 +573,7 @@ function sparkleButton(tree) {
 
 // 8n. A3: unmounting aborts the in-flight request
 {
-  slots = []; remoteCalls.length = 0; effectCleanups.length = 0
+  resetSlots(); remoteCalls.length = 0; effectCleanups.length = 0
   executeImpl = ({ signal }) => new Promise((_resolve, reject) => {
     signal.addEventListener('abort', () => reject(new Error('aborted')))
   })
@@ -519,7 +588,7 @@ function sparkleButton(tree) {
 
 // 8o. A4: a huge thrown message is truncated, not pasted whole
 {
-  slots = []; effectCleanups.length = 0
+  resetSlots(); effectCleanups.length = 0
   executeImpl = async () => { throw new Error('x'.repeat(500)) }
   const { tree } = render()
   void sparkleButton(tree).props.onClick()
@@ -531,7 +600,7 @@ function sparkleButton(tree) {
 
 // 8p. English UI: labels, refusal message and the card's language switch
 {
-  slots = []; store.clear(); setDraftCalls.length = 0
+  resetSlots(); store.clear(); setDraftCalls.length = 0
   store.set('prompt-hone.locale', 'en')
   const { tree } = render()
   const chip = findButton(tree, node => (node.props?.['aria-label'] ?? '').includes('strength'))
@@ -551,7 +620,7 @@ function sparkleButton(tree) {
 
   const card = registrations.find(r => r.options?.name === 'plugins.bundle.config')
   cursor = 0
-  const cardTree = card.component({ view: 'page' })
+  const cardTree = Card({ view: 'page' })
   const english = findButton(cardTree, node => collectText(node).join('') === 'English')
   check('the card offers a language switch', english !== undefined)
   if (english !== undefined) english.props.onClick()
@@ -561,7 +630,7 @@ function sparkleButton(tree) {
 
 // 8q. Host failures are bracketed codes the reader's language can translate
 {
-  slots = []; store.clear(); store.set('prompt-hone.locale', 'en'); setDraftCalls.length = 0
+  resetSlots(); store.clear(); store.set('prompt-hone.locale', 'en'); setDraftCalls.length = 0
   const failWith = async text => {
     executeImpl = async () => ({ ok: true, value: { result: { kind: 'error', text } } })
     const { tree } = render()
@@ -584,9 +653,27 @@ function sparkleButton(tree) {
   store.delete('prompt-hone.locale')
 }
 
+// 8r. style cycling and the diff rows the preview renders
+{
+  resetSlots(); store.clear(); setDraftCalls.length = 0; remoteCalls.length = 0
+  const { tree } = render()
+  const styleChip = findButton(tree, node => (node.props?.['aria-label'] ?? '').startsWith('风格'))
+  check('a style chip is rendered', styleChip !== undefined)
+  if (styleChip !== undefined) styleChip.props.onClick()
+  check('the style choice is remembered', store.get('prompt-hone.style') === 'social', String(store.get('prompt-hone.style')))
+
+  const { tree: after } = render()
+  await sparkleButton(after).props.onClick()
+  check('the chosen style reaches the command',
+    remoteCalls[0]?.[1] === '/polish --medium --style=social 把这段改得更有说服力', JSON.stringify(remoteCalls[0]?.[1]))
+  const preview = panelText()
+  check('the preview marks added lines', preview.includes('+ 改写结果'), preview.slice(-80))
+  store.delete('prompt-hone.style')
+}
+
 // 9. disabled states
 {
-  slots = []
+  resetSlots()
   const { tree } = render({ draft: '   ' })
   check('blank draft disables the control', sparkleButton(tree).props.disabled === true)
   const lockedTree = render({ draft: '有内容', locked: true }).tree

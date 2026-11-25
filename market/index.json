@@ -55,8 +55,8 @@
       },
       "versions": [
         {
-          "version": "0.9.1",
-          "publishTimestamp": 1795603744,
+          "version": "0.10.0",
+          "publishTimestamp": 1795605439,
           "source": {
             "type": "git",
             "url": "https://github.com/Miles22ui/dsh-prompt-hone",

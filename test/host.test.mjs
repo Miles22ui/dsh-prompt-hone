@@ -171,6 +171,21 @@ function harness({ config = {}, selection = { provider: 'p', model: 'm' }, chunk
   check('--stats reports the limits', parsed.timeoutMs === 120000 && parsed.maxInputChars === 6000 && parsed.strength === 'medium', stats.text)
 }
 
+// 12d. style presets add their directive to the system prompt
+{
+  const h = harness()
+  await h.invoke('--style=social 写条产品介绍')
+  const call = h.seen.calls.find(c => c.messages !== undefined)
+  check('a style preset reaches the system prompt', call.system.includes('social platform post'), call.system.slice(-60))
+  check('the style flag is not left in the draft', call.messages[0].content[0].text.includes('<草稿>\n写条产品介绍'))
+}
+{
+  const h = harness()
+  await h.invoke('--style=general 随便改改')
+  const call = h.seen.calls.find(c => c.messages !== undefined)
+  check('the general style adds nothing', !call.system.includes('Style target'), call.system.slice(-40))
+}
+
 // 13b. explicit strength flags (what the Client sends)
 {
   const h = harness()
