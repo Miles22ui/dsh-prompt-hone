@@ -21,7 +21,8 @@ skill 能在**对话里**改写提示词，但改不了你正在打字的那段�
 ### 从插件市场索引安装（推荐）
 
 1. DSH → **Plugins** → **Discover**
-2. 添加索引地址：`https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`
+2. 添加索引地址：`https://miles22ui.github.io/dsh-prompt-polisher/market/index.json`
+   （备用地址：`https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`）
 3. 在列表里安装 **提示词润色器**
 
 市场安装的是**被 pin 住的某个提交**（`git+https://github.com/Miles22ui/dsh-prompt-polisher.git#8574e2c…&path:/plugin`），
@@ -100,7 +101,8 @@ Web 模块加载器与 React hooks。
 2. 提交、`git tag vX.Y.Z`、把两者都推上去
 3. 在 `market/index.json` 里加这个版本：`publishTimestamp` 用 Unix **秒**，`source.commit` 必须是发布提交的
    40 位 SHA（绝不要写分支名）
-4. 推送。`raw.githubusercontent.com` 有约 5 分钟缓存
+4. 推送后等 Pages 构建（约 1 分钟）。CDN 对 Pages 副本缓存 10 分钟、对 raw 副本缓存约 5 分钟，
+   所以别人可能短暂看到旧版本
 
 ## 许可证
 

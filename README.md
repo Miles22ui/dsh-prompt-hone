@@ -24,7 +24,8 @@ The `skill/` in this repository is the same rules, packaged for agents that have
 ### From the plugin market index (recommended)
 
 1. DSH → **Plugins** → **Discover**
-2. Add this index URL: `https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`
+2. Add this index URL: `https://miles22ui.github.io/dsh-prompt-polisher/market/index.json`
+   (fallback host: `https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`)
 3. Install **Prompt polisher** from the list.
 
 The market pins the release commit (`git+https://github.com/Miles22ui/dsh-prompt-polisher.git#8574e2c…&path:/plugin`),
@@ -108,7 +109,8 @@ client suite fakes the Web module loader and React hooks.
 2. Commit, `git tag vX.Y.Z`, push both.
 3. In `market/index.json`, add the version with `publishTimestamp` in Unix **seconds** and
    `source.commit` set to the release commit's 40-hex SHA (never a branch name).
-4. Push. `raw.githubusercontent.com` caches for about five minutes.
+4. Push, then wait for the Pages build (about a minute). The CDN caches the Pages copy for 10 minutes
+   and the raw copy for about 5, so a reader may see the previous version briefly.
 
 ## License
 
