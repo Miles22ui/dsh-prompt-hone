@@ -8,7 +8,7 @@
 export const STRENGTHS = ['light', 'medium', 'strong']
 
 /** One-line usage shown when the command receives no draft. */
-export const USAGE = '用法：/polish [--light|--medium|--strong] <要润色的草稿>'
+export const USAGE = '[USAGE] 用法：/polish [--light|--medium|--strong] <要润色的草稿>'
 
 /**
  * Explicit strength flags. The Client always sends one of these so a draft that
@@ -85,7 +85,7 @@ export function buildRequest(rawInput, settings) {
   }
   if (text === '') return { error: USAGE }
   if (text.length > settings.maxInputChars) {
-    return { error: `草稿 ${text.length} 字符，超过上限 ${settings.maxInputChars}，请分段润色。` }
+    return { error: `[TOO_LONG] 草稿 ${text.length} 字符，超过上限 ${settings.maxInputChars}，请分段润色。` }
   }
   return { text, strength, maxTokens: MAX_TOKENS[strength] ?? MAX_TOKENS.medium }
 }

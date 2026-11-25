@@ -84,7 +84,18 @@ window.__ModuleLoader__.load({
         timeoutHint: '5–600，超时即取消并提示', hostOnly: '以下只在 Host 侧生效，改 profile 的 cordis.patch.yml：',
         copySnippet: '复制配置片段', saved: '已保存', copied: '已复制配置片段', copyFailed: '复制失败，请手动选中',
         langAuto: '自动', langZh: '中文', langEn: 'English',
+        failureGeneric: '润色失败',
         strength: { light: '轻', medium: '中', strong: '重' },
+        failure: {
+          NO_MODEL: '没有可用的模型：先在输入框的模型选择器里选一个，或在插件配置里设置 provider 与 model',
+          FAILED: '润色失败',
+          PROVIDER_FAILED: '模型服务报错',
+          CANCELLED: '润色已取消',
+          TIMEOUT: '润色超时，请重试',
+          EMPTY: '模型没有返回内容，请重试',
+          TOO_LONG: '草稿过长，请分段润色',
+          USAGE: '用法：/polish [--light|--medium|--strong] <草稿>',
+        },
       },
       en: {
         polish: 'Polish prompt', polishTitle: 'Polish the prompt (selection only, when text is selected)',
@@ -102,7 +113,18 @@ window.__ModuleLoader__.load({
         timeoutHint: '5–600; on timeout the request is cancelled', hostOnly: 'Host-side only — edit cordis.patch.yml in the profile:',
         copySnippet: 'Copy snippet', saved: 'Saved', copied: 'Snippet copied', copyFailed: 'Copy failed, select it manually',
         langAuto: 'Auto', langZh: '中文', langEn: 'English',
+        failureGeneric: 'Polishing failed',
         strength: { light: 'Light', medium: 'Medium', strong: 'Strong' },
+        failure: {
+          NO_MODEL: 'No model available — pick one in the composer, or set provider and model in the plugin config',
+          FAILED: 'Polishing failed',
+          PROVIDER_FAILED: 'The model provider returned an error',
+          CANCELLED: 'Polishing cancelled',
+          TIMEOUT: 'Polishing timed out, please retry',
+          EMPTY: 'The model returned nothing, please retry',
+          TOO_LONG: 'The draft is too long — polish it in parts',
+          USAGE: 'Usage: /polish [--light|--medium|--strong] <draft>',
+        },
       },
     }
 
@@ -120,6 +142,35 @@ window.__ModuleLoader__.load({
         for (const [name, value] of Object.entries(vars)) text = text.replaceAll(`{${name}}`, String(value))
       }
       return text
+    }
+
+    /** Host failures carry a bracketed code so the reader's language can win. */
+    const FAILURE_PREFIX = /^\[([A-Z][A-Z0-9_]*)\]\s*/
+
+    /** Uppercase token inside a failure body, such as RATE_LIMIT. */
+    const FAILURE_DETAIL = /\b([A-Z][A-Z0-9_]{2,})\b/
+
+    /**
+     * Translate one Host failure string.
+     *
+     * The Host always returns readable Chinese with a `[CODE]` prefix. A known
+     * code becomes the reader's language; an unknown one keeps the original
+     * text (minus the prefix) so a newer Host never degrades to a raw code.
+     * @param locale - `zh` or `en`.
+     * @param text - the command result text.
+     * @returns the text to show.
+     */
+    function translateFailure(locale, text) {
+      if (typeof text !== 'string') return text
+      const match = FAILURE_PREFIX.exec(text)
+      if (match === null) return text
+      const code = match[1]
+      const body = text.slice(match[0].length)
+      const table = MESSAGES[locale] ?? MESSAGES.en
+      const message = table.failure?.[code]
+      if (message === undefined) return body
+      const detail = code === 'FAILED' || code === 'PROVIDER_FAILED' ? FAILURE_DETAIL.exec(body) : null
+      return detail === null ? message : `${message} (${detail[1]})`
     }
 
     /**
@@ -472,7 +523,9 @@ window.__ModuleLoader__.load({
             step = 'result'
             const result = outcome.result ?? {}
             if (result.kind !== 'success' || typeof result.text !== 'string' || result.text === '') {
-              setError(typeof result.text === 'string' && result.text !== '' ? result.text : t(locale, 'empty'))
+              setError(typeof result.text === 'string' && result.text !== ''
+                ? translateFailure(locale, result.text)
+                : t(locale, 'empty'))
               return
             }
             step = 'apply'
@@ -738,7 +791,9 @@ window.__ModuleLoader__.load({
           if (result.kind === 'error') {
             // Command results never render, so the control is the only place a
             // typed failure can become visible.
-            const message = typeof result.text === 'string' && result.text !== '' ? result.text : t(locale, 'polishFailed')
+            const message = typeof result.text === 'string' && result.text !== ''
+              ? translateFailure(locale, result.text)
+              : t(locale, 'polishFailed')
             try { entry.fail(message) } catch (_error) { /* control unmounted */ }
             return
           }

@@ -85,6 +85,7 @@ function harness({ config = {}, selection = { provider: 'p', model: 'm' }, chunk
   const h = harness()
   const r = await h.invoke('x'.repeat(6001))
   check('oversize draft rejected', r.kind === 'error' && r.text.includes('6000'), JSON.stringify(r))
+  check('the oversize failure carries a code', r.text.startsWith('[TOO_LONG] '), r.text.slice(0, 20))
 }
 
 // 6. explicit route in config wins
@@ -108,6 +109,7 @@ function harness({ config = {}, selection = { provider: 'p', model: 'm' }, chunk
   const h = harness({ selection: null })
   const r = await h.invoke('随便改改')
   check('missing route is actionable', r.kind === 'error' && r.text.includes('模型选择器'), JSON.stringify(r))
+  check('a host failure carries a stable code', r.text.startsWith('[NO_MODEL] '), r.text.slice(0, 20))
 }
 
 // 9. provider failure surfaces the code

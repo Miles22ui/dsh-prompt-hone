@@ -149,14 +149,14 @@ async function polish(ctx, settings, invocation) {
       trace('route', 'none')
       return {
         kind: 'error',
-        text: '没有可用的模型：先在输入框的模型选择器里选一个模型，或在插件配置里同时设置 provider 与 model。',
+        text: '[NO_MODEL] 没有可用的模型：先在输入框的模型选择器里选一个模型，或在插件配置里同时设置 provider 与 model。',
       }
     }
     trace('route', `${route.provider}/${route.model} maxTokens=${request.maxTokens}`)
     return await streamRewrite(ctx, settings, invocation, request, route)
   } catch (error) {
     trace('threw', errorText(error))
-    return { kind: 'error', text: `润色失败：${errorText(error)}` }
+    return { kind: 'error', text: `[FAILED] 润色失败：${errorText(error)}` }
   }
 }
 
@@ -192,19 +192,19 @@ async function streamRewrite(ctx, settings, invocation, request, route) {
   } catch (error) {
     if (invocation.signal.aborted) {
       trace('aborted')
-      return { kind: 'error', text: '润色已取消。' }
+      return { kind: 'error', text: '[CANCELLED] 润色已取消。' }
     }
     if (signal.aborted) {
       trace('timeout', `ms=${settings.timeoutMs}`)
-      return { kind: 'error', text: `润色超时（${Math.round(settings.timeoutMs / 1000)} 秒），请重试。` }
+      return { kind: 'error', text: `[TIMEOUT] 润色超时（${Math.round(settings.timeoutMs / 1000)} 秒），请重试。` }
     }
     trace('stream-threw', errorText(error))
-    return { kind: 'error', text: `润色失败：${errorText(error)}` }
+    return { kind: 'error', text: `[FAILED] 润色失败：${errorText(error)}` }
   }
   rememberUsage(invocation.agent?.session?.id, usage)
   trace('stream-end', `chars=${output.length} reason=${reason?.kind ?? 'none'} tokens=${usage?.totalTokens ?? usage?.outputTokens ?? '?'}`)
   if (reason !== undefined && reason.kind !== 'stop' && reason.kind !== 'max-tokens') {
-    return { kind: 'error', text: `润色失败：${failureText(reason)}` }
+    return { kind: 'error', text: `[PROVIDER_FAILED] 润色失败：${failureText(reason)}` }
   }
   if (reason !== undefined && reason.kind === 'max-tokens') {
     ctx.logger.warn('prompt-polisher: output reached the token cap; the rewrite may be truncated')
@@ -212,7 +212,7 @@ async function streamRewrite(ctx, settings, invocation, request, route) {
   const text = stripFence(output)
   if (text === '') {
     trace('empty')
-    return { kind: 'error', text: '模型没有返回内容，请重试。' }
+    return { kind: 'error', text: '[EMPTY] 模型没有返回内容，请重试。' }
   }
   trace('result', `chars=${text.length}`)
   return { kind: 'success', text }

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.1
+
+Host failures speak the reader's language too.
+
+- The Host prefixes every failure with a stable code — `[NO_MODEL]`, `[TIMEOUT]`, `[PROVIDER_FAILED]`, … — and
+  keeps the Chinese text after it, so the Session log stays readable.
+- The client strips the prefix and shows the message in the active language; an unknown code falls back to the
+  original text rather than a raw code, so an older client never breaks on a newer Host.
+- Provider codes survive the translation (`RATE_LIMIT` stays visible).
+- 112 assertions: the suite now checks the code contract on both sides.
+
+
 ## 0.9.0
 
 The interface speaks English too.

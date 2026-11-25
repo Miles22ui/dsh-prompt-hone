@@ -559,6 +559,31 @@ function sparkleButton(tree) {
   store.delete('prompt-hone.locale')
 }
 
+// 8q. Host failures are bracketed codes the reader's language can translate
+{
+  slots = []; store.clear(); store.set('prompt-hone.locale', 'en'); setDraftCalls.length = 0
+  const failWith = async text => {
+    executeImpl = async () => ({ ok: true, value: { result: { kind: 'error', text } } })
+    const { tree } = render()
+    void sparkleButton(tree).props.onClick()
+    await new Promise(resolve => setImmediate(resolve))
+    return statusText(render().tree)
+  }
+
+  const known = await failWith('[NO_MODEL] 没有可用的模型：先在输入框的模型选择器里选一个模型')
+  check('a known failure code is translated', known.includes('No model available') && !known.includes('没有可用的模型'), known.slice(0, 120))
+
+  const unknown = await failWith('[SOMETHING_NEW] 未来版本的新错误')
+  check('an unknown code falls back to the original text',
+    unknown.includes('未来版本的新错误') && !unknown.includes('[SOMETHING_NEW]'), unknown.slice(0, 120))
+
+  const detailed = await failWith('[PROVIDER_FAILED] 润色失败：RATE_LIMIT')
+  check('a provider code survives translation', detailed.includes('RATE_LIMIT'), detailed.slice(0, 120))
+
+  executeImpl = async () => ({ ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
+  store.delete('prompt-hone.locale')
+}
+
 // 9. disabled states
 {
   slots = []
