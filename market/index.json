@@ -60,7 +60,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/Miles22ui/dsh-prompt-hone",
-            "commit": "71b1f068e69003271139775f2989cfbe4e16cc91",
+            "commit": "6c912dfba3b63dc45430feb7b1ada6a20f5f7ffc",
             "path": "plugin"
           },
           "engines": {
