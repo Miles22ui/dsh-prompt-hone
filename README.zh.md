@@ -1,9 +1,9 @@
 # dsh-prompt-hone
 
+[English](README.md) | **中文**
+
 一个 DeepSeek Harness 插件：**原地润色输入框草稿**。写完一句话，点 ✨，它变成结构化、可执行的提示词，
 停在输入框里等你改或直接发。另外附带一份可移植的 `SKILL.md`，给没有输入框可改的 agent 用。
-
-[English](README.md)
 
 [![ci](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
@@ -53,7 +53,7 @@ skill 能在**对话里**改写提示词，但改不了你正在打字的那段�
 
 **Plugins → 提示词润色器 → 详情页**：
 
-- 可改：默认强度、客户端超时（5–600 秒），存在浏览器里
+- 可改：**界面语言**（自动 / 中文 / English，自动跟随浏览器）、默认强度、客户端超时（5–600 秒），存在浏览器里
 - 只读：模型路由、Host 超时、输入上限，并附可复制的 `cordis.patch.yml` 片段
 
 润色使用的模型就是**输入框里当前选中的模型**，不需要单独配置。

@@ -9,7 +9,7 @@
 3. 草稿被替换为改写结果，旁边出现「撤销」
 4. 可继续编辑，或直接发送
 
-✨ 右侧的 **中 / 轻 / 重** 是强度档，点击切换并记住选择。
+✨ 右侧的 **中 / 轻 / 重** 是强度档，点击切换并记住选择。界面语言可在 Plugins 详情页的配置卡里切换（自动 / 中文 / English）。
 
 - **只润一段**：选中文字再点 ✨，只替换选区（编辑器原生撤销）
 - **取消**：润色中再点一次 ✨；60 秒无返回自动超时
@@ -45,3 +45,42 @@
   - 有 `handler` 无 `result`：模型调用失败，看 `stream-threw` / `stream-end`
   - 有 `result`：Host 侧成功，问题在客户端呈现
 - `/polish` 的结果不进对话流；键盘路径靠客户端监听 `command/executed` 把文本填回输入框，期间你若已开始打字则不会覆盖。
+
+
+---
+
+# Prompt hone (English)
+
+Click ✨ beside Send and the draft in the composer becomes a structured, executable prompt, in place.
+Nothing reaches the model unless you send it.
+
+## Usage
+
+1. Write a draft in the composer — a direction is enough.
+2. Click **✨** next to the Send button.
+3. The draft is replaced; **Undo** restores it.
+4. Keep editing, or send.
+
+The **light / medium / strong** chip next to ✨ switches strength (remembered across reloads).
+The interface language (Auto / 中文 / English) is on the plugin's page under **Plugins**.
+
+- **Selection only** — select text first and only that passage is rewritten (native Ctrl/Cmd+Z)
+- **Cancel** — click ✨ again while it runs; a 60 s deadline also applies
+- **Keyboard** — `/polish --strong <draft>`: the composer clears, then the rewrite is filled back in
+- **Usage** — hover ✨ after a run for the last call's input/output tokens (a Host `--stats` read, no model call)
+- **Settings** — the plugin page can change the interface language, default strength and client timeout;
+  model route, Host timeout and input limit are read-only, with a copyable YAML snippet
+
+## Which model it uses
+
+The model already selected in the composer. No separate configuration is needed; to pin a model, set
+both `provider` and `model` in the plugin's `config` (setting only one is ignored).
+
+## Safety boundaries
+
+- The draft is written back only if it has not changed since you clicked; otherwise it reports the change
+  and leaves your text alone.
+- Drafts containing file / Session reference chips are **not** replaced — a whole-draft replacement would
+  drop those chips.
+- Every run is one real model request and is billed as such; the draft is sent to your provider.
+- Input limit is 6000 characters (`maxInputChars`).

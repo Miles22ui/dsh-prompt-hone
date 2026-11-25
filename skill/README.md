@@ -43,3 +43,37 @@ Verify by asking the host to "润色这段提示词" or "polish this prompt" —
 | Best for | "make this draft I'm about to send better" | "help me write/repair a prompt" |
 
 The plugin is at <https://github.com/Miles22ui/dsh-prompt-hone>.
+
+
+---
+
+## 中文说明
+
+这是插件同一套规则的 skill 版本，给**没有输入框可改**的宿主用：agent 在对话里改写提示词，而不是编辑你的输入框。
+
+### 安装
+
+把本目录拷到宿主的 skills 目录，目录名保持不变：
+
+| 宿主 | 目标位置 |
+|---|---|
+| **DeepSeek Harness** | `~/.dsh/skills/prompt-hone/` |
+| **Claude Code** | `~/.claude/skills/prompt-hone/` |
+| **Codex CLI** | `~/.codex/skills/prompt-hone/`（或项目内 `.agents/skills/prompt-hone/`） |
+| **Cursor / Gemini CLI 等** | 各自文档里的 skills 目录，或项目内 `.agents/skills/` |
+
+```sh
+mkdir -p ~/.dsh/skills
+cp -R prompt-hone ~/.dsh/skills/
+```
+
+验证：对宿主说「润色这段提示词」，应当命中本 skill。
+
+### 它会做什么
+
+- 把草稿改写成结构化提示词（目标 / 输入 / 约束 / 输出 / 验收），保留原意、语言、变量名与事实
+- **只输出提示词**——没有开场白、没有解释，除非你要
+- 三档强度：轻（只改措辞）、中（默认）、重（完整结构）
+- 不写空话、不编造事实；缺信息写成 `[待补充: …]`
+
+插件版见 <https://github.com/Miles22ui/dsh-prompt-hone>。

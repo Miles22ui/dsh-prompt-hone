@@ -1,5 +1,5 @@
 - insert:
-    - id: prompt-polisher
+    - id: prompt-hone
       name: 'dsh-prompt-hone'
       config:
         strength: medium

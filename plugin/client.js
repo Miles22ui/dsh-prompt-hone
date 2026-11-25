@@ -21,12 +21,116 @@ window.__ModuleLoader__.load({
     /** The only composer phase in which a programmatic draft write is accepted. */
     const IDLE = 'plain'
 
-    /** Strength shown on the chip and sent as an explicit flag. */
+    /** Strength ids; the visible label comes from the active language. */
     const STRENGTHS = [
-      { id: 'light', label: '轻', flag: '--light' },
-      { id: 'medium', label: '中', flag: '--medium' },
-      { id: 'strong', label: '重', flag: '--strong' },
+      { id: 'light', flag: '--light' },
+      { id: 'medium', flag: '--medium' },
+      { id: 'strong', flag: '--strong' },
     ]
+
+    /** UI languages: `auto` follows the browser, the others pin one. */
+    const LOCALES = ['auto', 'zh', 'en']
+    const LOCALE_KEY = 'prompt-hone.locale'
+
+    /** Same-document signal so the composer control and the card stay in sync. */
+    const LOCALE_EVENT = 'prompt-hone:locale'
+
+    function readLocalePref() {
+      try {
+        const stored = window.localStorage.getItem(LOCALE_KEY)
+        return LOCALES.includes(stored) ? stored : 'auto'
+      } catch (_error) {
+        return 'auto'
+      }
+    }
+
+    function writeLocalePref(value) {
+      try { window.localStorage.setItem(LOCALE_KEY, value) } catch (_error) { /* private mode */ }
+    }
+
+    /**
+     * Resolve the language actually used for text.
+     * @param pref - `auto`, `zh` or `en`.
+     * @returns `zh` or `en`.
+     */
+    function resolveLocale(pref) {
+      if (pref === 'zh' || pref === 'en') return pref
+      try {
+        const language = window.navigator?.language ?? 'en'
+        return /^zh/i.test(language) ? 'zh' : 'en'
+      } catch (_error) {
+        return 'zh'
+      }
+    }
+
+    function broadcastLocale(value) {
+      try { window.dispatchEvent(new CustomEvent(LOCALE_EVENT, { detail: value })) } catch (_error) { /* no CustomEvent */ }
+    }
+
+    /** Every visible string, once per language. */
+    const MESSAGES = {
+      zh: {
+        polish: '润色提示词', polishTitle: '润色提示词（有选区只润选区，否则润整段）',
+        cancel: '取消润色', undo: '撤销', undoTitle: '撤销润色，恢复原文',
+        strengthTitle: '润色强度：轻改 / 标准 / 重构 — 点击切换', strengthAria: '润色强度',
+        references: '草稿含引用，未替换', changed: '草稿已改动，未覆盖', changedNoFill: '草稿已改动，未填入',
+        cancelled: '已取消', timeout: '超时未返回（{seconds} 秒），已取消',
+        channel: '通道不可用 {detail}', unregistered: '命令未注册或返回为空：确认插件已启用并已重启',
+        rejected: '命令被拒绝：{code} {message}', empty: '没有返回内容',
+        stepFailed: '{step} 失败：{message}', polishFailed: '润色失败',
+        lastUsage: '上次：入 {input} / 出 {output} tokens',
+        preferences: '本机偏好（存在浏览器里，换设备不跟随）',
+        language: '语言', defaultStrength: '默认强度', clientTimeout: '客户端超时（秒）',
+        timeoutHint: '5–600，超时即取消并提示', hostOnly: '以下只在 Host 侧生效，改 profile 的 cordis.patch.yml：',
+        copySnippet: '复制配置片段', saved: '已保存', copied: '已复制配置片段', copyFailed: '复制失败，请手动选中',
+        langAuto: '自动', langZh: '中文', langEn: 'English',
+        strength: { light: '轻', medium: '中', strong: '重' },
+      },
+      en: {
+        polish: 'Polish prompt', polishTitle: 'Polish the prompt (selection only, when text is selected)',
+        cancel: 'Cancel polishing', undo: 'Undo', undoTitle: 'Undo the rewrite and restore the original',
+        strengthTitle: 'Strength: light / medium / strong — click to switch', strengthAria: 'Polish strength',
+        references: 'The draft has references, so it was left untouched', changed: 'The draft changed, nothing was overwritten',
+        changedNoFill: 'The draft changed, so the result was not filled in',
+        cancelled: 'Cancelled', timeout: 'Timed out after {seconds}s, cancelled',
+        channel: 'Command channel unavailable: {detail}', unregistered: 'Command not registered or empty reply — check that the plugin is enabled and DSH was restarted',
+        rejected: 'Command rejected: {code} {message}', empty: 'Empty reply',
+        stepFailed: '{step} failed: {message}', polishFailed: 'Polishing failed',
+        lastUsage: 'Last: in {input} / out {output} tokens',
+        preferences: 'Local preferences (stored in this browser)',
+        language: 'Language', defaultStrength: 'Default strength', clientTimeout: 'Client timeout (s)',
+        timeoutHint: '5–600; on timeout the request is cancelled', hostOnly: 'Host-side only — edit cordis.patch.yml in the profile:',
+        copySnippet: 'Copy snippet', saved: 'Saved', copied: 'Snippet copied', copyFailed: 'Copy failed, select it manually',
+        langAuto: 'Auto', langZh: '中文', langEn: 'English',
+        strength: { light: 'Light', medium: 'Medium', strong: 'Strong' },
+      },
+    }
+
+    /**
+     * Look up one message.
+     * @param locale - `zh` or `en`.
+     * @param key - message key.
+     * @param vars - optional `{name}` replacements.
+     * @returns the localized text.
+     */
+    function t(locale, key, vars) {
+      const table = MESSAGES[locale] ?? MESSAGES.en
+      let text = table[key] ?? MESSAGES.en[key] ?? key
+      if (vars !== undefined) {
+        for (const [name, value] of Object.entries(vars)) text = text.replaceAll(`{${name}}`, String(value))
+      }
+      return text
+    }
+
+    /**
+     * Visible name of one strength.
+     * @param locale - `zh` or `en`.
+     * @param id - strength id.
+     * @returns the label.
+     */
+    function strengthLabel(locale, id) {
+      return (MESSAGES[locale] ?? MESSAGES.en).strength[id] ?? id
+    }
 
     /** Remembered strength, so a reload keeps the reader's choice. */
     const STRENGTH_KEY = 'prompt-polisher.strength'
@@ -226,6 +330,8 @@ window.__ModuleLoader__.load({
         const [previous, setPrevious] = useState(null)
         const [detail, setDetail] = useState(null)
         const [usage, setUsage] = useState(null)
+        const [localePref, setLocalePref] = useState(readLocalePref)
+        const locale = resolveLocale(localePref)
         const liveDraft = useRef(draft)
         liveDraft.current = draft
         const actionsRef = useRef(inputActions)
@@ -240,6 +346,17 @@ window.__ModuleLoader__.load({
           try { window.addEventListener(STRENGTH_EVENT, onStrength) } catch (_error) { /* no window */ }
           return () => {
             try { window.removeEventListener(STRENGTH_EVENT, onStrength) } catch (_error) { /* no window */ }
+          }
+        }, [])
+
+        useEffect(() => {
+          const onLocale = (event) => {
+            const next = event?.detail
+            if (LOCALES.includes(next)) setLocalePref(next)
+          }
+          try { window.addEventListener(LOCALE_EVENT, onLocale) } catch (_error) { /* no window */ }
+          return () => {
+            try { window.removeEventListener(LOCALE_EVENT, onLocale) } catch (_error) { /* no window */ }
           }
         }, [])
 
@@ -307,7 +424,7 @@ window.__ModuleLoader__.load({
           if (typeof sent !== 'string' || sent.trim() === '') return
           if (hasReferences) {
             // setDraft() drops inline reference chips; refuse instead of losing them.
-            setError('草稿含引用，未替换')
+            setError(t(locale, 'references'))
             return
           }
           // A selection polishes just that passage; an empty selection polishes
@@ -332,39 +449,41 @@ window.__ModuleLoader__.load({
             const resolved = commandsOf(holder, ctx)
             const commands = resolved.commands
             if (commands === undefined) {
-              console.error('[prompt-polisher] command channel unavailable:', resolved.tried)
+              console.error('[prompt-hone] command channel unavailable:', resolved.tried)
               // The row is narrow: show a short line, keep the full report on hover.
               const brief = resolved.tried.length > 44 ? `${resolved.tried.slice(0, 44)}…` : resolved.tried
-              setError(`通道不可用 ${brief}`)
+              setError(t(locale, 'channel', { detail: brief }))
               setDetail(resolved.tried)
               return
             }
             step = 'execute'
             const outcome = unwrap(await commands.execute(sessionId, `/polish ${current.flag} ${target}`, [], signal))
             if (outcome.kind === 'missing') {
-              setError('命令未注册或返回为空：确认插件已启用并已重启')
+              setError(t(locale, 'unregistered'))
               return
             }
             if (outcome.kind === 'refused') {
               const failure = outcome.error
-              setError(`命令被拒绝：${failure?.code ?? '?'} ${failure?.message ?? describe(failure)}`)
+              setError(t(locale, 'rejected', {
+                code: failure?.code ?? '?', message: failure?.message ?? describe(failure),
+              }))
               return
             }
             step = 'result'
             const result = outcome.result ?? {}
             if (result.kind !== 'success' || typeof result.text !== 'string' || result.text === '') {
-              setError(typeof result.text === 'string' && result.text !== '' ? result.text : '没有返回内容')
+              setError(typeof result.text === 'string' && result.text !== '' ? result.text : t(locale, 'empty'))
               return
             }
             step = 'apply'
             if (liveDraft.current !== sent) {
-              setError('草稿已改动，未覆盖')
+              setError(t(locale, 'changed'))
               return
             }
             if (hasSelection) {
               // insertText is one native undo step and carries its own revision check.
               const applied = actionsRef.current.insertText(result.text, span)
-              if (!applied) setError('草稿已改动，未覆盖')
+              if (!applied) setError(t(locale, 'changed'))
               else setPrevious(null)
             } else {
               setPrevious(sent)
@@ -373,12 +492,12 @@ window.__ModuleLoader__.load({
             void refreshUsage()
           } catch (reason) {
             if (controller.signal.aborted) {
-              setError('已取消')
+              setError(t(locale, 'cancelled'))
             } else if (signal.aborted) {
-              setError(`超时未返回（${Math.round(timeoutMs / 1000)} 秒），已取消`)
+              setError(t(locale, 'timeout', { seconds: Math.round(timeoutMs / 1000) }))
             } else {
-              console.error('[prompt-polisher] failed at', step, reason)
-              setError(`${step} 失败：${describe(reason)}`)
+              console.error('[prompt-hone] failed at', step, reason)
+              setError(t(locale, 'stepFailed', { step, message: describe(reason) }))
             }
           } finally {
             abortRef.current = null
@@ -397,11 +516,13 @@ window.__ModuleLoader__.load({
           h('button', {
             type: 'button',
             title: busy
-              ? '取消润色'
-              : [error ?? '润色提示词（有选区只润选区，否则润整段）',
-                usage === null ? null : `上次：入 ${usage.inputTokens ?? '?'} / 出 ${usage.outputTokens ?? '?'} tokens`,
+              ? t(locale, 'cancel')
+              : [error ?? t(locale, 'polishTitle'),
+                usage === null ? null : t(locale, 'lastUsage', {
+                  input: usage.inputTokens ?? '?', output: usage.outputTokens ?? '?',
+                }),
               ].filter(Boolean).join(' · '),
-            'aria-label': busy ? '取消润色' : '润色提示词',
+            'aria-label': busy ? t(locale, 'cancel') : t(locale, 'polish'),
             'aria-busy': busy ? 'true' : 'false',
             disabled: locked || (!busy && !canRun),
             onClick: () => { void run() },
@@ -425,23 +546,23 @@ window.__ModuleLoader__.load({
           h('button', {
             type: 'button',
             onClick: cycleStrength,
-            title: '润色强度：轻改 / 标准 / 重构 — 点击切换',
-            'aria-label': `润色强度 ${current.id}`,
+            title: t(locale, 'strengthTitle'),
+            'aria-label': `${t(locale, 'strengthAria')} ${strengthLabel(locale, current.id)}`,
             disabled: !usable,
             style: {
               border: 0, background: 'transparent', color: 'inherit', cursor: usable ? 'pointer' : 'default',
               fontSize: 11, opacity: usable ? 0.65 : 0.35, padding: '0 2px', flex: '0 0 auto',
             },
-          }, current.label),
+          }, strengthLabel(locale, current.id)),
           previous === null ? null : h('button', {
             type: 'button',
             onClick: undo,
-            title: '撤销润色，恢复原文',
+            title: t(locale, 'undoTitle'),
             style: {
               border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer',
               fontSize: 11, opacity: 0.7, padding: 0, flex: '0 0 auto',
             },
-          }, '撤销'),
+          }, t(locale, 'undo')),
           error === null ? null : h('span', {
             role: 'status',
             title: detail ?? error,
@@ -470,19 +591,32 @@ window.__ModuleLoader__.load({
       const row = { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }
       const label = { fontSize: 12, opacity: 0.75, minWidth: 96 }
 
-      return function PromptPolisherSettings(props) {
+      return function PromptHoneSettings(props) {
         const { view } = props
         const [strength, setStrengthState] = useState(readStrength)
         const [seconds, setSeconds] = useState(() => Math.round(readTimeoutMs() / 1000))
+        const [localePref, setLocalePref] = useState(readLocalePref)
         const [note, setNote] = useState(null)
+        const locale = resolveLocale(localePref)
+
         useEffect(() => {
           const onStrength = (event) => {
             const next = event?.detail
             if (STRENGTHS.some(entry => entry.id === next)) setStrengthState(next)
           }
-          try { window.addEventListener(STRENGTH_EVENT, onStrength) } catch (_error) { /* no window */ }
+          const onLocale = (event) => {
+            const next = event?.detail
+            if (LOCALES.includes(next)) setLocalePref(next)
+          }
+          try {
+            window.addEventListener(STRENGTH_EVENT, onStrength)
+            window.addEventListener(LOCALE_EVENT, onLocale)
+          } catch (_error) { /* no window */ }
           return () => {
-            try { window.removeEventListener(STRENGTH_EVENT, onStrength) } catch (_error) { /* no window */ }
+            try {
+              window.removeEventListener(STRENGTH_EVENT, onStrength)
+              window.removeEventListener(LOCALE_EVENT, onLocale)
+            } catch (_error) { /* no window */ }
           }
         }, [])
         if (view === 'summary') return null
@@ -491,65 +625,83 @@ window.__ModuleLoader__.load({
           setStrengthState(id)
           writeStrength(id)
           broadcastStrength(id)
-          setNote('已保存')
+          setNote(t(locale, 'saved'))
+        }
+        const chooseLocale = (value) => {
+          setLocalePref(value)
+          writeLocalePref(value)
+          broadcastLocale(value)
         }
         const changeSeconds = (event) => {
           const next = Number(event?.target?.value)
           setSeconds(Number.isFinite(next) ? next : '')
           if (Number.isFinite(next) && next >= 5 && next <= 600) {
             writeTimeoutMs(Math.round(next * 1000))
-            setNote('已保存')
+            setNote(t(locale, 'saved'))
           }
         }
         const snippet = `- insert:
-    - id: prompt-polisher
+    - id: prompt-hone
       name: 'dsh-prompt-hone'
       config:
         strength: medium
         timeoutMs: 120000
         maxInputChars: 6000
-        # 可选：固定润色所用的模型，两行必须同时生效
-        # provider: <你的 provider>
-        # model: <你的 model>`
+        # ${locale === 'zh' ? '可选：固定润色所用的模型，两行必须同时生效' : 'optional: pin the model used for polishing; both lines are required'}
+        # provider: <${locale === 'zh' ? '你的 provider' : 'your provider'}>
+        # model: <${locale === 'zh' ? '你的 model' : 'your model'}>`
         const copy = () => {
           try {
             void navigator.clipboard.writeText(snippet)
-            setNote('已复制配置片段')
+            setNote(t(locale, 'copied'))
           } catch (_error) {
-            setNote('复制失败，请手动选中')
+            setNote(t(locale, 'copyFailed'))
           }
         }
+        const pick = (active) => ({
+          ...control,
+          fontWeight: active ? 600 : 400,
+          borderColor: active
+            ? 'var(--dsw-alias-brand-primary, currentColor)'
+            : 'var(--dsw-alias-border-l2, rgba(127,127,127,.35))',
+        })
 
         return h('div', { style: { fontSize: 12, lineHeight: 1.6 } },
-          h('div', { style: { ...label, minWidth: 0, opacity: 0.9, marginBottom: 8 } }, '本机偏好（存在浏览器里，换设备不跟随）'),
+          h('div', { style: { ...label, minWidth: 0, opacity: 0.9, marginBottom: 8 } },
+            t(locale, 'preferences')),
           h('div', { style: row },
-            h('span', { style: label }, '默认强度'),
+            h('span', { style: label }, t(locale, 'language')),
+            ...LOCALES.map(value => h('button', {
+              type: 'button',
+              key: value,
+              onClick: () => chooseLocale(value),
+              'aria-pressed': value === localePref ? 'true' : 'false',
+              style: pick(value === localePref),
+            }, t(locale, value === 'auto' ? 'langAuto' : value === 'zh' ? 'langZh' : 'langEn')))),
+          h('div', { style: row },
+            h('span', { style: label }, t(locale, 'defaultStrength')),
             ...STRENGTHS.map(entry => h('button', {
               type: 'button',
               key: entry.id,
+              title: entry.id,
               onClick: () => choose(entry.id),
               'aria-pressed': entry.id === strength ? 'true' : 'false',
-              style: {
-                ...control,
-                fontWeight: entry.id === strength ? 600 : 400,
-                borderColor: entry.id === strength
-                  ? 'var(--dsw-alias-brand-primary, currentColor)'
-                  : 'var(--dsw-alias-border-l2, rgba(127,127,127,.35))',
-              },
-            }, `${entry.label} ${entry.id}`))),
+              style: pick(entry.id === strength),
+            }, strengthLabel(locale, entry.id)))),
           h('div', { style: row },
-            h('span', { style: label }, '客户端超时（秒）'),
+            h('span', { style: label }, t(locale, 'clientTimeout')),
             h('input', {
               type: 'number', min: 5, max: 600, step: 5, value: seconds,
               onChange: changeSeconds,
               style: { ...control, width: 88, cursor: 'text' },
             }),
-            h('span', { style: { opacity: 0.6 } }, '5–600，超时即取消并提示')),
+            h('span', { style: { opacity: 0.6 } }, t(locale, 'timeoutHint'))),
           note === null ? null : h('div', { role: 'status', style: { opacity: 0.75, marginBottom: 8 } }, note),
           h('div', { style: { borderTop: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,.25))', paddingTop: 10, marginTop: 4 } },
-            h('div', { style: { ...label, minWidth: 0, opacity: 0.75, marginBottom: 6 } }, '以下只在 Host 侧生效，改 profile 的 cordis.patch.yml：'),
+            h('div', { style: { ...label, minWidth: 0, opacity: 0.75, marginBottom: 6 } },
+              t(locale, 'hostOnly')),
             h('pre', { style: { ...mono, fontSize: 11, opacity: 0.9, margin: '0 0 8px', padding: 8, overflowX: 'auto', background: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,.08))', borderRadius: 8 } }, snippet),
-            h('button', { type: 'button', onClick: copy, style: control }, '复制配置片段')))
+            h('button', { type: 'button', onClick: copy, style: control }, t(locale, 'copySnippet'))))
       }
     }
 
@@ -567,11 +719,11 @@ window.__ModuleLoader__.load({
               try {
                 holder.commands = typeof scope.get === 'function' ? scope.get(key) : scope[key]
               } catch (reason) {
-                console.warn(`[prompt-polisher] injected ${key} but could not read it:`, reason)
+                console.warn(`[prompt-hone] injected ${key} but could not read it:`, reason)
               }
             })
           } catch (reason) {
-            console.warn(`[prompt-polisher] could not inject ${key}:`, reason)
+            console.warn(`[prompt-hone] could not inject ${key}:`, reason)
           }
         }
         capture('remote.commands')
@@ -582,10 +734,11 @@ window.__ModuleLoader__.load({
           const entry = writers.get(sessionId)
           if (entry === undefined) return
           if (result === null || typeof result !== 'object') return
+          const locale = resolveLocale(readLocalePref())
           if (result.kind === 'error') {
             // Command results never render, so the control is the only place a
             // typed failure can become visible.
-            const message = typeof result.text === 'string' && result.text !== '' ? result.text : '润色失败'
+            const message = typeof result.text === 'string' && result.text !== '' ? result.text : t(locale, 'polishFailed')
             try { entry.fail(message) } catch (_error) { /* control unmounted */ }
             return
           }
@@ -595,11 +748,11 @@ window.__ModuleLoader__.load({
           try { current = entry.read() } catch (_error) { current = '' }
           // Never clobber text the reader started typing while the command ran.
           if (typeof current === 'string' && current !== '') {
-            try { entry.fail('草稿已改动，未填入') } catch (_error) { /* control unmounted */ }
+            try { entry.fail(t(locale, 'changedNoFill')) } catch (_error) { /* control unmounted */ }
             return
           }
           try { entry.write(result.text) } catch (reason) {
-            console.warn('[prompt-polisher] could not fill the draft after a typed command:', reason)
+            console.warn('[prompt-hone] could not fill the draft after a typed command:', reason)
           }
         })
         const Control = createControl(holder, ctx, writers)

@@ -110,7 +110,7 @@ export function apply(ctx, config = {}) {
   trace('boot', `strength=${settings.strength} route=${settings.provider ?? 'session'}`)
   ctx.commands.register({
     name: 'polish',
-    description: '润色输入框草稿（等同 ✨ 按钮）',
+    description: 'Polish the composer draft (提示词打磨，等同 ✨)',
     input: { hint: '[--light|--medium|--strong] <草稿>' },
     handler: invocation => polish(ctx, settings, invocation),
   })

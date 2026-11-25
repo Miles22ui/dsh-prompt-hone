@@ -1,10 +1,10 @@
 # dsh-prompt-hone
 
+**English** | [中文](README.zh.md)
+
 A DeepSeek Harness plugin that polishes the **composer draft** in place: click ✨, and the rough
 sentence you were about to send becomes a structured, executable prompt. Plus a portable
 `SKILL.md` for agents that polish prompts in conversation instead.
-
-[中文说明](README.zh.md)
 
 [![ci](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
@@ -58,7 +58,8 @@ whole-draft replacement drops those chips.
 
 **Plugins → Prompt polisher → details** carries a configuration card:
 
-- editable: default strength, client timeout (5–600 s), saved in the browser;
+- editable: **interface language** (Auto / 中文 / English — Auto follows the browser), default strength,
+  client timeout (5–600 s); saved in the browser;
 - read-only: model route, Host timeout, input limit, plus a copyable `cordis.patch.yml` snippet.
 
 The model used is the one **selected in the composer**; no separate model configuration is required.

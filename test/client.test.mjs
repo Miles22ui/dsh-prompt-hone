@@ -40,6 +40,7 @@ globalThis.window = {
   },
   removeEventListener: (name, fn) => { windowListeners.get(name)?.delete(fn) },
   dispatchEvent: (event) => { for (const fn of windowListeners.get(event.type) ?? []) fn(event) },
+  navigator: { language: 'zh-CN' },
   localStorage: {
     getItem: key => (store.has(key) ? store.get(key) : null),
     setItem: (key, value) => { store.set(key, value) },
@@ -128,7 +129,8 @@ function statusText(tree) {
 }
 
 function sparkleButton(tree) {
-  return findButton(tree, node => ['润色提示词', '取消润色'].includes(node.props?.['aria-label']))
+  return findButton(tree, node => ['润色提示词', '取消润色', 'Polish prompt', 'Cancel polishing']
+    .includes(node.props?.['aria-label']))
 }
 
 // 1. success: replaces the draft, no error
@@ -432,7 +434,10 @@ function sparkleButton(tree) {
 
   makeTree('我已经在打字了')
   handlers['command/executed']('session-fail', 'polish', { kind: 'success', text: '结果' })
-  check('a blocked typed fill says so', collectText(makeTree('我已经在打字了')).join(' ').includes('草稿已改动，未填入'))
+  {
+    const seen = collectText(makeTree('我已经在打字了')).join(' ')
+    check('a blocked typed fill says so', seen.includes('草稿已改动，未填入'), seen.slice(0, 160))
+  }
 }
 
 // 8j. the Plugins-page card
@@ -522,6 +527,36 @@ function sparkleButton(tree) {
   const shown = statusText(render().tree)
   check('one thrown value cannot flood the control', shown.length > 0 && shown.length <= 260 && shown.includes('…'), `${shown.length} chars: ${shown.slice(0, 80)}`)
   executeImpl = async () => ({ ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
+}
+
+// 8p. English UI: labels, refusal message and the card's language switch
+{
+  slots = []; store.clear(); setDraftCalls.length = 0
+  store.set('prompt-hone.locale', 'en')
+  const { tree } = render()
+  const chip = findButton(tree, node => (node.props?.['aria-label'] ?? '').includes('strength'))
+  check('the strength label follows English', collectText(chip).join('').startsWith('Medium'), collectText(chip).join(''))
+  check('the tooltip follows English',
+    String(sparkleButton(tree).props.title).includes('Polish the prompt'), String(sparkleButton(tree).props.title))
+
+  const blockedProps = {
+    useInput: selector => selector({ draft: 'x', phase: 'plain', occurrences: [{ offset: 0 }] }),
+    inputActions: { setDraft: () => {} }, sessionId: 'session-en', locked: false,
+  }
+  cursor = 0
+  void sparkleButton(Control(blockedProps)).props.onClick()
+  cursor = 0
+  const message = collectText(Control(blockedProps)).join(' ')
+  check('the refusal message follows English', message.includes('references'), message.slice(0, 120))
+
+  const card = registrations.find(r => r.options?.name === 'plugins.bundle.config')
+  cursor = 0
+  const cardTree = card.component({ view: 'page' })
+  const english = findButton(cardTree, node => collectText(node).join('') === 'English')
+  check('the card offers a language switch', english !== undefined)
+  if (english !== undefined) english.props.onClick()
+  check('choosing a language persists it', store.get('prompt-hone.locale') === 'en', String(store.get('prompt-hone.locale')))
+  store.delete('prompt-hone.locale')
 }
 
 // 9. disabled states

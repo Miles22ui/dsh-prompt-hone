@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0
+
+The interface speaks English too.
+
+- **Interface language** (Auto / 中文 / English) on the plugin's page; Auto follows the browser. The choice
+  applies immediately to the composer control and the card, and is remembered per browser.
+- Every visible string is localized: tooltips, strength labels (轻/中/重 ↔ Light/Medium/Strong), undo,
+  inline errors and the settings card.
+- One throwaway scope bug is worth naming: the typed-command handler read a language variable declared in a
+  sibling branch, which its own try/catch swallowed. The suite caught it by asserting the visible text, not
+  just that nothing crashed.
+- Docs are bilingual end to end: READMEs with a switcher, the plugin page carries an English section, and the
+  skill README gained a Chinese one.
+
+
 ## 0.8.0
 
 Renamed to avoid a collision in the plugin registry: an unrelated composer polisher already
