@@ -1,0 +1,13 @@
+{
+  "name": "dsh-prompt-polisher-repo",
+  "private": true,
+  "type": "module",
+  "description": "Repository for the dsh-prompt-polisher DSH plugin and its portable skill.",
+  "scripts": {
+    "test": "node test/host.test.mjs && node test/client.test.mjs"
+  },
+  "engines": {
+    "node": ">=20.6"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Prompt polisher">
+  <rect x="6" y="6" width="52" height="52" rx="14" fill="#2f6fd0"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-width="3.4" opacity="0.92">
+    <path d="M20 24h18"/>
+    <path d="M20 32h12"/>
+    <path d="M20 40h8"/>
+  </g>
+  <path d="M43 20l2.1 5.1L50 27l-4.9 1.9L43 34l-2.1-5.1L36 27l4.9-1.9z" fill="#ffd166"/>
+  <path d="M49 37l1.3 3.1 3.2 1.2-3.2 1.2L49 45.6l-1.3-3.1L44.5 41.3l3.2-1.2z" fill="#ffffff" opacity="0.85"/>
+</svg>
