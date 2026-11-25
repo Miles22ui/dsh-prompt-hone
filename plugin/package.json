@@ -1,6 +1,6 @@
 {
   "name": "dsh-prompt-hone",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "private": true,
   "type": "module",
   "description": "Polish the DSH composer draft into a clearer, executable prompt, in place.",

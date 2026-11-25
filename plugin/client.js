@@ -221,6 +221,13 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * Forget every stored rewrite.
+     */
+    function clearHistory() {
+      try { window.localStorage.removeItem(HISTORY_KEY) } catch (_error) { /* private mode */ }
+    }
+
+    /**
      * Prepend one applied rewrite.
      * @param entry - { at, strength, style, original, polished, tokens }.
      * @returns the new list.
@@ -966,6 +973,7 @@ window.__ModuleLoader__.load({
         const failures = check === null ? [] : check.failed.map(key => t(locale, `check${key.charAt(0).toUpperCase()}${key.slice(1)}`))
 
         const close = () => { setNote(null); viewStore.patch(sessionId, { pending: null, historyOpen: false }) }
+        const wipeHistory = () => { clearHistory(); viewStore.patch(sessionId, {}) }
         const apply = () => {
           if (pending === null) return
           if (liveDraft.current !== pending.original) { setNote(t(locale, 'previewStale')); return }
@@ -997,6 +1005,10 @@ window.__ModuleLoader__.load({
           ...failures.map(label => h('span', { key: label, style: { ...pill, opacity: 0.6 } },
             `${t(locale, 'checkFailedLabel')} ${label}`)),
           h('span', { style: { flex: 1 } }),
+          pending === null && history.length > 0
+            ? h('button', { type: 'button', onClick: wipeHistory, style: { ...button, padding: '2px 8px' } },
+              t(locale, 'clearHistory'))
+            : null,
           note === null ? null : h('span', { role: 'status', style: { fontSize: 11, opacity: 0.75 } }, note),
           h('button', { type: 'button', onClick: close, style: { ...button, padding: '2px 8px' } }, t(locale, 'close')))
 

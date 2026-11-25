@@ -105,6 +105,7 @@ against version drift (a stale `commit` or an unbumped `version` fails CI instea
   「通道不可用」 rather than failing silently. `engines.dsh` gates installs.
 - Reference chips are not preserved; the plugin refuses instead.
 - Each run is one real model request and is billed as such; the draft is sent to the selected provider.
+- The last eight applied rewrites are kept in this browser's localStorage, text included; clear them from the ⟲ panel.
 - The draft travels as a `/polish` command argument, so it is recorded in the Session log even when you
   never send it. That keeps the auxiliary request reconstructable from the log (a DSH invariant); if you
   would rather not have drafts persisted, do not polish confidential text.

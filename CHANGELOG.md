@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1
+
+- The history panel gains **Clear**: the last eight rewrites are stored in this browser, text included, so they need
+  a way to be forgotten. Also documents that in the README's known limits.
+
+
 ## 0.10.0
 
 Four things borrowed from the tools that do this at scale.
