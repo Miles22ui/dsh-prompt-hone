@@ -74,7 +74,7 @@ Host 侧注册 `/polish`；浏览器侧从 `RemoteResult` 信封里取结果。�
 
 ```
 plugin/     DSH bundle（Host 的 index.js + 浏览器 client.js + prompts.js + 语言包 + 图标）
-skill/      prompt-polisher/SKILL.md，给没有输入框的宿主
+skill/      prompt-hone/SKILL.md，给没有输入框的宿主
 test/       两套零依赖测试（Host + 客户端），npm test 运行
 ```
 
@@ -96,7 +96,7 @@ npm test
 - 每次润色都是一次真实模型请求，按量计费；草稿会发给你选中的服务商。
 - 草稿是作为 `/polish` 的参数字符串传过去的，因此**会写进会话日志**——即使你最后没有发送。这保留了
   「模型可见即可从日志重建」这条不变量；不想让草稿留痕，就别拿机密文本点润色。
-- 诊断写入 `/tmp/prompt-polisher-trace.log`（只记字符数与错误码，不记内容），超 1 MiB 轮转。
+- 诊断写入 `/tmp/prompt-hone-trace.log`（只记字符数与错误码，不记内容），超 1 MiB 轮转。
 
 ## 发布流程（维护者）
 

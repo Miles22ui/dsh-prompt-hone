@@ -80,7 +80,7 @@ the text itself — which also keeps the conversation free of noise rows.
 
 ```
 plugin/     the DSH bundle (Host index.js + Web client.js + prompts.js + locales + icon)
-skill/      prompt-polisher/SKILL.md, for composer-less agents
+skill/      prompt-hone/SKILL.md, for composer-less agents
 test/       two dependency-free suites (host + client), run with npm test
 ```
 
@@ -104,7 +104,7 @@ against version drift (a stale `commit` or an unbumped `version` fails CI instea
 - The draft travels as a `/polish` command argument, so it is recorded in the Session log even when you
   never send it. That keeps the auxiliary request reconstructable from the log (a DSH invariant); if you
   would rather not have drafts persisted, do not polish confidential text.
-- Diagnostics are appended to `/tmp/prompt-polisher-trace.log` (sizes and error codes only, never text),
+- Diagnostics are appended to `/tmp/prompt-hone-trace.log` (sizes and error codes only, never text),
   rotated at 1 MiB.
 
 ## Releasing (maintainers)

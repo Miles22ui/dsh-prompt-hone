@@ -23,7 +23,7 @@ export const inject = ['commands', 'llm']
 const PURPOSE = 'prompt-polish'
 
 /** Stage log read with a plain file read; contains no draft text. */
-const TRACE_FILE = '/tmp/prompt-polisher-trace.log'
+const TRACE_FILE = '/tmp/prompt-hone-trace.log'
 
 /** The trace is diagnostics, not history: rotate it instead of growing forever. */
 const TRACE_MAX_BYTES = 1024 * 1024

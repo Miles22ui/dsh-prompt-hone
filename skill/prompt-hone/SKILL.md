@@ -1,5 +1,5 @@
 ---
-name: prompt-polisher
+name: prompt-hone
 description: Rewrite a rough draft into a clearer, executable prompt without changing the user's intent. Use when the user says 润色提示词、改写提示词、帮我写个提示词、把这段话变成提示词、这个 prompt 怎么优化、prompt 太模糊帮我改清楚, or asks to polish / tighten / restructure / fix a prompt for any model. Also use before running an important task when the user's request is vague and they want it turned into a reusable prompt.
 ---
 

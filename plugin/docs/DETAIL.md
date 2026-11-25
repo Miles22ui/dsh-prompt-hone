@@ -40,7 +40,7 @@
 ## 诊断（出问题时）
 
 - 命令结果本身不会出现在对话里（DSH 现状），插件是靠客户端的 `command/executed` 事件把文本填回输入框的。
-- 插件会把每个阶段写到 `/tmp/prompt-polisher-trace.log`（只记字符数和错误码，不记草稿内容）：
+- 插件会把每个阶段写到 `/tmp/prompt-hone-trace.log`（只记字符数和错误码，不记草稿内容）：
   - 有 `boot` 无 `handler`：命令没派发到 Host
   - 有 `handler` 无 `result`：模型调用失败，看 `stream-threw` / `stream-end`
   - 有 `result`：Host 侧成功，问题在客户端呈现
