@@ -18,9 +18,18 @@ skill 能在**对话里**改写提示词，但改不了你正在打字的那段�
 
 **要求**：DSH `>=0.2.2-rc.5`（实测于 `0.2.2-rc.5`）。Node 只用于跑测试。
 
-在发布市场索引之前，先按本地目录安装：
+### 从插件市场索引安装（推荐）
 
-1. 克隆或下载本仓库
+1. DSH → **Plugins** → **Discover**
+2. 添加索引地址：`https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`
+3. 在列表里安装 **提示词润色器**
+
+市场安装的是**被 pin 住的某个提交**（`git+https://github.com/Miles22ui/dsh-prompt-polisher.git#8574e2c…&path:/plugin`），
+所以只有索引宣告新版本时才会更新。
+
+### 从本地目录安装（开发用）
+
+1. 克隆本仓库
 2. DSH → **Plugins** → **Add plugin** → 选择 `plugin/` 目录
 3. 若插件行没有自动激活，重启 DSH
 
@@ -84,6 +93,14 @@ Web 模块加载器与 React hooks。
 - 不保留引用胶囊，遇到就拒绝替换。
 - 每次润色都是一次真实模型请求，按量计费；草稿会发给你选中的服务商。
 - 诊断写入 `/tmp/prompt-polisher-trace.log`（只记字符数与错误码，不记内容），超 1 MiB 轮转。
+
+## 发布流程（维护者）
+
+1. 改 `plugin/package.json` 的 `version`
+2. 提交、`git tag vX.Y.Z`、把两者都推上去
+3. 在 `market/index.json` 里加这个版本：`publishTimestamp` 用 Unix **秒**，`source.commit` 必须是发布提交的
+   40 位 SHA（绝不要写分支名）
+4. 推送。`raw.githubusercontent.com` 有约 5 分钟缓存
 
 ## 许可证
 

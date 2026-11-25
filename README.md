@@ -21,9 +21,18 @@ The `skill/` in this repository is the same rules, packaged for agents that have
 
 **Requirements**: DSH `>=0.2.2-rc.5` (tested on `0.2.2-rc.5`). Node is only needed to run the tests.
 
-Until a market index is published, install from a local directory:
+### From the plugin market index (recommended)
 
-1. Copy or clone this repository.
+1. DSH → **Plugins** → **Discover**
+2. Add this index URL: `https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`
+3. Install **Prompt polisher** from the list.
+
+The market pins the release commit (`git+https://github.com/Miles22ui/dsh-prompt-polisher.git#8574e2c…&path:/plugin`),
+so updates arrive only when the index announces them.
+
+### From a local directory (development)
+
+1. Clone this repository.
 2. DSH → **Plugins** → **Add plugin** → choose the `plugin/` directory.
 3. Restart DSH if the plugin row does not turn active on its own.
 
@@ -92,6 +101,14 @@ client suite fakes the Web module loader and React hooks.
 - Each run is one real model request and is billed as such; the draft is sent to the selected provider.
 - Diagnostics are appended to `/tmp/prompt-polisher-trace.log` (sizes and error codes only, never text),
   rotated at 1 MiB.
+
+## Releasing (maintainers)
+
+1. Bump `plugin/package.json` `version`.
+2. Commit, `git tag vX.Y.Z`, push both.
+3. In `market/index.json`, add the version with `publishTimestamp` in Unix **seconds** and
+   `source.commit` set to the release commit's 40-hex SHA (never a branch name).
+4. Push. `raw.githubusercontent.com` caches for about five minutes.
 
 ## License
 

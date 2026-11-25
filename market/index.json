@@ -1,0 +1,73 @@
+{
+  "format": 1,
+  "title": {
+    "en": "Prompt tools",
+    "zh": "提示词工具",
+    "ja": "プロンプトツール"
+  },
+  "description": {
+    "en": "Small, focused tools for writing better prompts.",
+    "zh": "写更好提示词的小工具。"
+  },
+  "metadata": {
+    "categories": {
+      "prompt": {
+        "title": {
+          "en": "Prompt",
+          "zh": "提示词"
+        }
+      }
+    },
+    "labels": {},
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-prompt-polisher",
+      "title": {
+        "en": "Prompt polisher",
+        "zh": "提示词润色器",
+        "ja": "プロンプト研磨"
+      },
+      "description": {
+        "en": "Click the sparkle beside the composer to rewrite the draft into a clearer, executable prompt, in place and with undo. Selection polish, a light/medium/strong dial, cancel and timeout, and a settings card are included.",
+        "zh": "点输入框旁的 ✨，把草稿原地改写成更清晰、可执行的提示词，可撤销。支持选区润色、轻/中/重三档、取消与超时、以及设置卡。",
+        "ja": "コンポーザーの横の✨を押すと、下書きをその場で実行可能なプロンプトに書き換えます。取り消し、選択範囲の研磨、強度ダイヤル、キャンセルとタイムアウト、設定カード付き。"
+      },
+      "icon": "https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/plugin/icon.svg",
+      "author": "Miles",
+      "homepage": "https://github.com/Miles22ui/dsh-prompt-polisher",
+      "repository": {
+        "url": "https://github.com/Miles22ui/dsh-prompt-polisher",
+        "directory": "plugin"
+      },
+      "metadata": {
+        "category": "prompt",
+        "keywords": [
+          "dsh-plugin",
+          "prompt",
+          "prompt-engineering",
+          "prompt-optimization",
+          "composer"
+        ],
+        "labels": [],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "0.7.0",
+          "publishTimestamp": 1795582993,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/Miles22ui/dsh-prompt-polisher",
+            "commit": "8574e2c17d6b37a392632caf58545d8c2c152c65",
+            "path": "plugin"
+          },
+          "engines": {
+            "dsh": ">=0.2.2-rc.5"
+          }
+        }
+      ]
+    }
+  ]
+}
