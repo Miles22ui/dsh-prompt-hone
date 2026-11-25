@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.1
+
+- The preview panel sits directly under the composer again. The dock is shared with the cost meter, which registers
+  at orders 5 and 9; at order 10 this panel rendered after them, below the session statistics strip. It now registers
+  at order 1.
+
+
 ## 0.11.0
 
 Narrowed back to the one job, after living with 0.10 for a few minutes.

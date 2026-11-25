@@ -998,10 +998,13 @@ window.__ModuleLoader__.load({
           })
         })
         const Panel = createPanel()
+        // The dock is shared with the cost meter (orders 5 and 9); a lower order
+        // keeps this panel directly under the composer instead of below the
+        // session statistics strip.
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
           name: 'conversation.composer.dock',
           id: 'prompt-hone-panel',
-          order: 10,
+          order: 1,
         }, Panel))
         const Control = createControl(holder, ctx, writers)
         ctx.slots.inject('conversation.input.right', () => ctx.slots.register({
