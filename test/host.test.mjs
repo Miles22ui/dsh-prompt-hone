@@ -1,4 +1,4 @@
-/** Host-half tests for dsh-prompt-polisher; no DSH runtime required. */
+/** Host-half tests for dsh-prompt-hone; no DSH runtime required. */
 const PLUGIN = new URL('../plugin/', import.meta.url).href
 const { apply } = await import(`${PLUGIN}index.js`)
 const { buildRequest, buildUserPrompt, stripFence } = await import(`${PLUGIN}prompts.js`)

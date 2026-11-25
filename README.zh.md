@@ -1,11 +1,11 @@
-# dsh-prompt-polisher
+# dsh-prompt-hone
 
 一个 DeepSeek Harness 插件：**原地润色输入框草稿**。写完一句话，点 ✨，它变成结构化、可执行的提示词，
 停在输入框里等你改或直接发。另外附带一份可移植的 `SKILL.md`，给没有输入框可改的 agent 用。
 
 [English](README.md)
 
-[![ci](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
+[![ci](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
 ## 为什么是插件，而不只是 skill
 
@@ -21,11 +21,11 @@ skill 能在**对话里**改写提示词，但改不了你正在打字的那段�
 ### 从插件市场索引安装（推荐）
 
 1. DSH → **Plugins** → **Discover**
-2. 添加索引地址：`https://miles22ui.github.io/dsh-prompt-polisher/market/index.json`
-   （备用地址：`https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`）
+2. 添加索引地址：`https://miles22ui.github.io/dsh-prompt-hone/market/index.json`
+   （备用地址：`https://raw.githubusercontent.com/Miles22ui/dsh-prompt-hone/main/market/index.json`）
 3. 在列表里安装 **提示词润色器**
 
-市场安装的是**被 pin 住的某个提交**（`git+https://github.com/Miles22ui/dsh-prompt-polisher.git#8574e2c…&path:/plugin`），
+市场安装的是**被 pin 住的某个提交**（`git+https://github.com/Miles22ui/dsh-prompt-hone.git#8574e2c…&path:/plugin`），
 所以只有索引宣告新版本时才会更新。
 
 ### 从本地目录安装（开发用）

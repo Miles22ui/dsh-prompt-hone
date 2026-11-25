@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Prompt polisher",
+    "title": "Prompt hone",
     "description": "Polish the draft in place from the ✨ control beside the composer, with undo. /polish does the same from the keyboard. Uses the model already selected in the composer.",
     "detail": "docs/DETAIL.md"
   }

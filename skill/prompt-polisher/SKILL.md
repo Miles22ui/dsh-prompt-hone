@@ -76,7 +76,7 @@ Medium rewrite:
 
 ## Related
 
-The DSH plugin [dsh-prompt-polisher](https://github.com/Miles22ui/dsh-prompt-polisher) applies these same
+The DSH plugin [dsh-prompt-hone](https://github.com/Miles22ui/dsh-prompt-hone) applies these same
 rules to the composer draft, in place, with undo and a strength dial. This skill covers hosts that have no
 composer to write into.
 

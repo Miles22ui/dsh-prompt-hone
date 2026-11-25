@@ -1,4 +1,4 @@
-# dsh-prompt-polisher
+# dsh-prompt-hone
 
 A DeepSeek Harness plugin that polishes the **composer draft** in place: click ✨, and the rough
 sentence you were about to send becomes a structured, executable prompt. Plus a portable
@@ -6,7 +6,7 @@ sentence you were about to send becomes a structured, executable prompt. Plus a 
 
 [中文说明](README.zh.md)
 
-[![ci](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-polisher/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
+[![ci](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
 ## Why a plugin, not just a skill
 
@@ -24,11 +24,11 @@ The `skill/` in this repository is the same rules, packaged for agents that have
 ### From the plugin market index (recommended)
 
 1. DSH → **Plugins** → **Discover**
-2. Add this index URL: `https://miles22ui.github.io/dsh-prompt-polisher/market/index.json`
-   (fallback host: `https://raw.githubusercontent.com/Miles22ui/dsh-prompt-polisher/main/market/index.json`)
+2. Add this index URL: `https://miles22ui.github.io/dsh-prompt-hone/market/index.json`
+   (fallback host: `https://raw.githubusercontent.com/Miles22ui/dsh-prompt-hone/main/market/index.json`)
 3. Install **Prompt polisher** from the list.
 
-The market pins the release commit (`git+https://github.com/Miles22ui/dsh-prompt-polisher.git#8574e2c…&path:/plugin`),
+The market pins the release commit (`git+https://github.com/Miles22ui/dsh-prompt-hone.git#8574e2c…&path:/plugin`),
 so updates arrive only when the index announces them.
 
 ### From a local directory (development)

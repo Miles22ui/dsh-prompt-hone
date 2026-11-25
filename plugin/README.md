@@ -1,4 +1,4 @@
-# dsh-prompt-polisher
+# dsh-prompt-hone
 
 DSH bundle half of the repository. See the [repository README](../README.md) for install and usage.
 

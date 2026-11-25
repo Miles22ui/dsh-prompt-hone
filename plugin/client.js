@@ -12,7 +12,7 @@
  * build step, so React comes from the module table and nothing else is imported.
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-prompt-polisher',
+  id: 'dsh-prompt-hone',
   factory(require) {
     const React = require('react')
     const { useEffect, useRef, useState } = React
@@ -418,7 +418,7 @@ window.__ModuleLoader__.load({
               style: {
                 width: 13, height: 13, borderRadius: '50%',
                 border: '2px solid currentColor', borderTopColor: 'transparent',
-                animation: 'dsh-prompt-polisher-spin .8s linear infinite',
+                animation: 'dsh-prompt-hone-spin .8s linear infinite',
               },
             })
             : sparkle(15)),
@@ -450,7 +450,7 @@ window.__ModuleLoader__.load({
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             },
           }, error),
-          busy ? h('style', null, '@keyframes dsh-prompt-polisher-spin{to{transform:rotate(360deg)}}') : null)
+          busy ? h('style', null, '@keyframes dsh-prompt-hone-spin{to{transform:rotate(360deg)}}') : null)
       }
     }
 
@@ -503,7 +503,7 @@ window.__ModuleLoader__.load({
         }
         const snippet = `- insert:
     - id: prompt-polisher
-      name: 'dsh-prompt-polisher'
+      name: 'dsh-prompt-hone'
       config:
         strength: medium
         timeoutMs: 120000
@@ -613,7 +613,7 @@ window.__ModuleLoader__.load({
         const SettingsCard = createSettingsCard()
         ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
           name: 'plugins.bundle.config',
-          key: 'dsh-prompt-polisher',
+          key: 'dsh-prompt-hone',
           order: 10,
         }, SettingsCard))
       },

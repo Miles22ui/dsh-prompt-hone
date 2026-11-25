@@ -1,4 +1,4 @@
-/** Client-half tests for dsh-prompt-polisher; a fake module loader and fake hooks. */
+/** Client-half tests for dsh-prompt-hone; a fake module loader and fake hooks. */
 import { readFileSync } from 'node:fs'
 
 const source = readFileSync(new URL('../plugin/client.js', import.meta.url), 'utf8')
@@ -47,7 +47,7 @@ globalThis.window = {
 }
 await import('data:text/javascript;base64,' + Buffer.from(source, 'utf8').toString('base64'))
 
-check('registers one client module', loaded.length === 1 && loaded[0].id === 'dsh-prompt-polisher')
+check('registers one client module', loaded.length === 1 && loaded[0].id === 'dsh-prompt-hone')
 const mod = loaded[0].module
 check('injects slots and remote', mod.inject.includes('slots') && mod.inject.includes('remote'))
 
@@ -439,7 +439,7 @@ function sparkleButton(tree) {
 {
   slots = []; store.clear()
   const card = registrations.find(r => r.options?.name === 'plugins.bundle.config')
-  check('a settings card is registered for this bundle', card !== undefined && card.options.key === 'dsh-prompt-polisher', JSON.stringify(card?.options))
+  check('a settings card is registered for this bundle', card !== undefined && card.options.key === 'dsh-prompt-hone', JSON.stringify(card?.options))
   const Card = card.component
   const renderCard = (view) => {
     cursor = 0

@@ -1,8 +1,8 @@
 {
-  "name": "dsh-prompt-polisher-repo",
+  "name": "dsh-prompt-hone-repo",
   "private": true,
   "type": "module",
-  "description": "Repository for the dsh-prompt-polisher DSH plugin and its portable skill.",
+  "description": "Repository for the dsh-prompt-hone DSH plugin and its portable skill.",
   "scripts": {
     "test": "node test/host.test.mjs && node test/client.test.mjs && node test/market.test.mjs"
   },

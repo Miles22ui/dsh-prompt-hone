@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0
+
+Renamed to avoid a collision in the plugin registry: an unrelated composer polisher already
+publishes as `dsh-prompt-polisher`, and its npm name is taken as well.
+
+- Package `dsh-prompt-polisher` → **`dsh-prompt-hone`**; the repository and its Pages site follow.
+- Display name: **Prompt hone / 提示词打磨器** (the capability — polishing a composer draft — is unchanged).
+- The four identity strings move together as always: `package.json`, `cordis.patch.yml`, the Web module id,
+  and the Plugins-page card key.
+- Install address changes: the market index URL now lives under the new Pages path.
+
+Nothing changed in how the plugin behaves; upgrading is a reinstall rather than an in-place update,
+because the package name is part of its identity.
+
 ## 0.7.0
 
 First repository layout, renamed for publication.
