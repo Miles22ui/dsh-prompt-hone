@@ -84,11 +84,7 @@ window.__ModuleLoader__.load({
         timeoutHint: '5–600，超时即取消并提示', hostOnly: '以下只在 Host 侧生效，改 profile 的 cordis.patch.yml：',
         copySnippet: '复制配置片段', saved: '已保存', copied: '已复制配置片段', copyFailed: '复制失败，请手动选中',
         langAuto: '自动', langZh: '中文', langEn: 'English',
-        styleTitle: '提示词风格：点击切换', styleAria: '风格',
-        styles: { general: '通用', social: '社媒', report: '汇报', code: '代码', translate: '翻译', teach: '教学' },
-        preview: '改写预览', apply: '应用', discard: '放弃', applied: '已应用',
-        check: '结构自检', checkFailedLabel: '待补', checkOutput: '输出格式',
-        checkConstraints: '约束', checkAcceptance: '验收', checkVariables: '变量', checkLength: '长度',
+        preview: '改写结果', apply: '应用', discard: '放弃', applied: '已应用', characters: '{n} 字',
         history: '历史', historyTitle: '最近记录', historyEmpty: '还没有应用过',
         restoreOriginal: '恢复原稿', clearHistory: '清空', close: '关闭',
         previewStale: '草稿已变，请重新润色', restoreDone: '已恢复原稿',
@@ -121,11 +117,7 @@ window.__ModuleLoader__.load({
         timeoutHint: '5–600; on timeout the request is cancelled', hostOnly: 'Host-side only — edit cordis.patch.yml in the profile:',
         copySnippet: 'Copy snippet', saved: 'Saved', copied: 'Snippet copied', copyFailed: 'Copy failed, select it manually',
         langAuto: 'Auto', langZh: '中文', langEn: 'English',
-        styleTitle: 'Prompt style — click to switch', styleAria: 'Style',
-        styles: { general: 'General', social: 'Social', report: 'Report', code: 'Code', translate: 'Translate', teach: 'Teach' },
-        preview: 'Preview', apply: 'Apply', discard: 'Discard', applied: 'Applied',
-        check: 'Structure check', checkFailedLabel: 'missing', checkOutput: 'output format',
-        checkConstraints: 'constraints', checkAcceptance: 'acceptance', checkVariables: 'variables', checkLength: 'length',
+        preview: 'Rewrite', apply: 'Apply', discard: 'Discard', applied: 'Applied', characters: '{n} chars',
         history: 'History', historyTitle: 'Recent', historyEmpty: 'Nothing applied yet',
         restoreOriginal: 'Restore original', clearHistory: 'Clear', close: 'Close',
         previewStale: 'The draft changed — polish again', restoreDone: 'Original restored',
@@ -189,23 +181,6 @@ window.__ModuleLoader__.load({
       return detail === null ? message : `${message} (${detail[1]})`
     }
 
-    /** Style ids the Host accepts; labels live in the message table. */
-    const STYLES = ['general', 'social', 'report', 'code', 'translate', 'teach']
-    const STYLE_KEY = 'prompt-hone.style'
-
-    function readStyle() {
-      try {
-        const stored = window.localStorage.getItem(STYLE_KEY)
-        return STYLES.includes(stored) ? stored : 'general'
-      } catch (_error) {
-        return 'general'
-      }
-    }
-
-    function writeStyle(id) {
-      try { window.localStorage.setItem(STYLE_KEY, id) } catch (_error) { /* private mode */ }
-    }
-
     /** Recent rewrites, newest first; kept small because it holds draft text. */
     const HISTORY_KEY = 'prompt-hone.history'
     const HISTORY_LIMIT = 8
@@ -266,54 +241,6 @@ window.__ModuleLoader__.load({
      */
     function viewOf(sessionId) {
       return viewStore.get(sessionId) ?? VIEW_DEFAULT
-    }
-
-    /** Structure markers the self-check looks for, in both languages. */
-    const STRUCTURE_RULES = [
-      { key: 'output', pattern: /(输出格式|输出要求|返回格式|output format|respond with|return (?:a|an|the)? ?(?:json|markdown|list|table))/i },
-      { key: 'constraints', pattern: /(约束|必须|不得|不要|禁止|限制|must|never|do not|avoid|constraint)/i },
-      { key: 'acceptance', pattern: /(验收|判定标准|合格标准|acceptance|definition of done|success criteria)/i },
-      { key: 'variables', pattern: /\{\{\s*[^}]+\s*\}\}/ },
-    ]
-
-    /**
-     * Score the rewritten prompt without spending a model call.
-     * @param original - the draft before the rewrite.
-     * @param polished - the rewrite.
-     * @param strength - light | medium | strong.
-     * @param locale - zh | en.
-     * @returns a 0..4 score and the failing rule keys.
-     */
-    function structureCheck(original, polished, strength, locale) {
-      const failed = STRUCTURE_RULES.filter(rule => !rule.pattern.test(polished)).map(rule => rule.key)
-      const ratio = original.length === 0 ? 1 : polished.length / original.length
-      const bounds = strength === 'light' ? [0.5, 1.6] : strength === 'strong' ? [1.5, 8] : [1.0, 4]
-      if (ratio < bounds[0] || ratio > bounds[1]) failed.push('length')
-      return { score: STRUCTURE_RULES.length + 1 - failed.length, total: STRUCTURE_RULES.length + 1, failed }
-    }
-
-    /**
-     * Line diff between two texts, enough for a readable preview.
-     * @param before - original text.
-     * @param after - rewritten text.
-     * @returns rows of { type: 'same' | 'add' | 'remove', text }.
-     */
-    function diffLines(before, after) {
-      const left = before.split('\n')
-      const right = after.split('\n')
-      const rows = []
-      let start = 0
-      while (start < left.length && start < right.length && left[start] === right[start]) {
-        rows.push({ type: 'same', text: left[start] })
-        start += 1
-      }
-      let tail = 0
-      while (tail < left.length - start && tail < right.length - start
-        && left[left.length - 1 - tail] === right[right.length - 1 - tail]) tail += 1
-      for (const line of left.slice(start, left.length - tail)) rows.push({ type: 'remove', text: line })
-      for (const line of right.slice(start, right.length - tail)) rows.push({ type: 'add', text: line })
-      for (const line of left.slice(left.length - tail)) rows.push({ type: 'same', text: line })
-      return rows
     }
 
     /**
@@ -524,7 +451,6 @@ window.__ModuleLoader__.load({
         const [detail, setDetail] = useState(null)
         const [usage, setUsage] = useState(null)
         const [localePref, setLocalePref] = useState(readLocalePref)
-        const [style, setStyle] = useState(readStyle)
         const locale = resolveLocale(localePref)
         const liveDraft = useRef(draft)
         liveDraft.current = draft
@@ -581,13 +507,6 @@ window.__ModuleLoader__.load({
 
         const current = STRENGTHS.find(entry => entry.id === strength) ?? STRENGTHS[1]
         const hasReferences = Array.isArray(occurrences) && occurrences.length > 0
-
-        const cycleStyle = () => {
-          const index = STYLES.indexOf(style)
-          const next = STYLES[(index + 1) % STYLES.length]
-          setStyle(next)
-          writeStyle(next)
-        }
 
         const cycleStrength = () => {
           const index = STRENGTHS.findIndex(entry => entry.id === strength)
@@ -657,8 +576,7 @@ window.__ModuleLoader__.load({
               return
             }
             step = 'execute'
-            const outcome = unwrap(await commands.execute(
-              sessionId, `/polish ${current.flag} --style=${style} ${target}`, [], signal))
+            const outcome = unwrap(await commands.execute(sessionId, `/polish ${current.flag} ${target}`, [], signal))
             if (outcome.kind === 'missing') {
               setError(t(locale, 'unregistered'))
               return
@@ -690,7 +608,6 @@ window.__ModuleLoader__.load({
                 polished: result.text,
                 span: hasSelection ? span : null,
                 strength: current.id,
-                style,
                 at: Date.now(),
               },
               historyOpen: false,
@@ -753,17 +670,6 @@ window.__ModuleLoader__.load({
               fontSize: 11, opacity: usable ? 0.65 : 0.35, padding: '0 2px', flex: '0 0 auto',
             },
           }, strengthLabel(locale, current.id)),
-          h('button', {
-            type: 'button',
-            onClick: cycleStyle,
-            title: t(locale, 'styleTitle'),
-            'aria-label': `${t(locale, 'styleAria')} ${t(locale, 'styles')[style]}`,
-            disabled: !usable,
-            style: {
-              border: 0, background: 'transparent', color: 'inherit', cursor: usable ? 'pointer' : 'default',
-              fontSize: 11, opacity: usable ? 0.6 : 0.35, padding: '0 2px', flex: '0 0 auto',
-            },
-          }, t(locale, 'styles')[style]),
           h('button', {
             type: 'button',
             onClick: () => viewStore.patch(sessionId, { historyOpen: !viewOf(sessionId).historyOpen }),
@@ -934,8 +840,8 @@ window.__ModuleLoader__.load({
         background: 'transparent', color: 'inherit',
       }
       const primary = {
-        ...button, fontWeight: 600,
-        background: 'var(--dsw-alias-brand-primary, rgba(90,120,255,.18))',
+        ...button, fontWeight: 700, padding: '3px 12px',
+        borderColor: 'currentColor', borderWidth: 1,
       }
 
       return function PromptHonePanel(props) {
@@ -968,9 +874,6 @@ window.__ModuleLoader__.load({
         const history = readHistory()
         if (pending === null && view.historyOpen !== true) return null
 
-        const rows = pending === null ? [] : diffLines(pending.original, pending.polished)
-        const check = pending === null ? null : structureCheck(pending.original, pending.polished, pending.strength, locale)
-        const failures = check === null ? [] : check.failed.map(key => t(locale, `check${key.charAt(0).toUpperCase()}${key.slice(1)}`))
 
         const close = () => { setNote(null); viewStore.patch(sessionId, { pending: null, historyOpen: false }) }
         const wipeHistory = () => { clearHistory(); viewStore.patch(sessionId, {}) }
@@ -986,7 +889,7 @@ window.__ModuleLoader__.load({
           }
           if (!applied) { setNote(t(locale, 'previewStale')); return }
           pushHistory({
-            at: pending.at, strength: pending.strength, style: pending.style,
+            at: pending.at, strength: pending.strength,
             original: pending.original, polished: pending.polished,
           })
           viewStore.patch(sessionId, { pending: null })
@@ -999,11 +902,7 @@ window.__ModuleLoader__.load({
 
         const header = h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 } },
           h('strong', { style: { fontSize: 12 } }, pending === null ? t(locale, 'historyTitle') : t(locale, 'preview')),
-          pending === null ? null : h('span', { style: pill }, t(locale, 'styles')[pending.style] ?? pending.style),
-          pending === null || check === null ? null : h('span', { style: pill },
-            `${t(locale, 'check')} ${check.score}/${check.total}`),
-          ...failures.map(label => h('span', { key: label, style: { ...pill, opacity: 0.6 } },
-            `${t(locale, 'checkFailedLabel')} ${label}`)),
+          pending === null ? null : h('span', { style: pill }, t(locale, 'characters', { n: pending.polished.length })),
           h('span', { style: { flex: 1 } }),
           pending === null && history.length > 0
             ? h('button', { type: 'button', onClick: wipeHistory, style: { ...button, padding: '2px 8px' } },
@@ -1025,16 +924,13 @@ window.__ModuleLoader__.load({
               h('span', { style: { flex: 1 } }),
               h('button', { type: 'button', onClick: () => restore(entry), style: { ...button, padding: '1px 8px' } },
                 t(locale, 'restoreOriginal'))))))
-          : h('div', { style: { ...mono, fontSize: 11, lineHeight: 1.5, maxHeight: 220, overflowY: 'auto', padding: 6, borderRadius: 8, background: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,.08))' } },
-            ...rows.slice(0, 60).map((row, index) => h('div', {
-              key: String(index),
-              style: {
-                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                color: row.type === 'add' ? 'var(--dsw-alias-state-success-primary, #2e9e5b)' : row.type === 'remove' ? 'var(--dsw-alias-state-error-primary, #c0392b)' : 'inherit',
-                opacity: row.type === 'same' ? 0.55 : 1,
-              },
-            }, `${row.type === 'add' ? '+' : row.type === 'remove' ? '−' : ' '} ${row.text || ' '}`)),
-            rows.length > 60 ? h('div', { style: { opacity: 0.6 } }, '…') : null)
+          : h('pre', {
+            style: {
+              ...mono, fontSize: 12, lineHeight: 1.6, margin: 0, padding: 8, borderRadius: 8,
+              maxHeight: 240, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              background: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,.08))',
+            },
+          }, pending.polished)
 
         return h('div', { style: { padding: '8px 10px', fontSize: 12 } },
           header,
@@ -1096,7 +992,7 @@ window.__ModuleLoader__.load({
           viewStore.patch(sessionId, {
             pending: {
               original: current, polished: result.text, span: null,
-              strength: 'medium', style: readStyle(), at: Date.now(),
+              strength: 'medium', at: Date.now(),
             },
             historyOpen: false,
           })

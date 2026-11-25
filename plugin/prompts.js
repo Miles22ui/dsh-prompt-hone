@@ -8,33 +8,7 @@
 export const STRENGTHS = ['light', 'medium', 'strong']
 
 /** One-line usage shown when the command receives no draft. */
-export const USAGE = '[USAGE] 用法：/polish [--light|--medium|--strong] [--style=general|social|report|code|translate|teach] <要润色的草稿>'
-
-/**
- * Optional style presets. The directive is written in English on purpose: it is
- * an instruction to the model, never text the reader sees, and the meta-prompt
- * already forces the output to follow the reader's language.
- */
-export const STYLES = [
-  { id: 'general', directive: '' },
-  { id: 'social', directive: 'Style target: social platform post. Open with a concrete scene rather than a greeting, keep sentences short, end with 3-5 topic tags.' },
-  { id: 'report', directive: 'Style target: workplace report. Lead with the conclusion, then bullets, every claim quantified and checkable, no adjective stacking.' },
-  { id: 'code', directive: 'Style target: code task. State language and version, inputs, outputs, boundary conditions and error handling, and ask for a minimal runnable example.' },
-  { id: 'translate', directive: 'Style target: translation or language revision. Preserve terminology and proper nouns, state register and audience, never change the meaning.' },
-  { id: 'teach', directive: 'Style target: teaching. One-sentence conclusion first, then a step-by-step derivation, each step carrying a concrete example.' },
-]
-
-/** Style ids, for validation. */
-export const STYLE_IDS = STYLES.map(style => style.id)
-
-/**
- * Resolve one style id.
- * @param id - candidate id.
- * @returns the style, or the general one.
- */
-export function styleOf(id) {
-  return STYLES.find(style => style.id === id) ?? STYLES[0]
-}
+export const USAGE = '[USAGE] 用法：/polish [--light|--medium|--strong] <要润色的草稿>'
 
 /**
  * Explicit strength flags. The Client always sends one of these so a draft that
@@ -98,12 +72,6 @@ export function buildRequest(rawInput, settings) {
   let text = String(rawInput ?? '').trim()
   if (text === '') return { error: USAGE }
   let strength = settings.strength
-  let style = styleOf(settings.style ?? 'general')
-  const styleFlag = /^--style=([a-z]+)\s+/.exec(text)
-  if (styleFlag !== null) {
-    if (STYLE_IDS.includes(styleFlag[1])) style = styleOf(styleFlag[1])
-    text = text.slice(styleFlag[0].length).trim()
-  }
   const flag = /^(--[a-z]+)\s+/.exec(text)
   if (flag !== null && FLAGS.has(flag[1])) {
     strength = FLAGS.get(flag[1])
@@ -119,7 +87,7 @@ export function buildRequest(rawInput, settings) {
   if (text.length > settings.maxInputChars) {
     return { error: `[TOO_LONG] 草稿 ${text.length} 字符，超过上限 ${settings.maxInputChars}，请分段润色。` }
   }
-  return { text, strength, style, maxTokens: MAX_TOKENS[strength] ?? MAX_TOKENS.medium }
+  return { text, strength, maxTokens: MAX_TOKENS[strength] ?? MAX_TOKENS.medium }
 }
 
 /**

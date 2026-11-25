@@ -188,12 +188,11 @@ function panelText(options) {
   const after = render().text.join(' | ')
   check('success does not overwrite the draft yet', setDraftCalls.length === 0, JSON.stringify(setDraftCalls))
   check('success shows no error', !after.includes('失败'), after)
-  check('the command carries strength and style',
-    remoteCalls[0]?.[1] === '/polish --medium --style=general 把这段改得更有说服力', JSON.stringify(remoteCalls[0]?.[1]))
+  check('the command carries the strength flag',
+    remoteCalls[0]?.[1] === '/polish --medium 把这段改得更有说服力', JSON.stringify(remoteCalls[0]?.[1]))
 
   const preview = panelText()
-  check('the preview panel appears', preview.includes('改写预览'), preview.slice(0, 80))
-  check('the preview scores the structure', /结构自检 \d+\/5/.test(preview), preview.slice(0, 120))
+  check('the preview panel shows the rewrite', preview.includes('改写结果') && preview.includes('改写结果'), preview.slice(0, 80))
 
   applyPending()
   check('applying writes the rewrite', setDraftCalls[0] === '改写结果', JSON.stringify(setDraftCalls))
@@ -407,7 +406,7 @@ function panelText(options) {
   const sparkle = sparkleButton(makeTree('草稿'))
   await sparkle.props.onClick()
   check('the chosen strength is sent as a flag',
-    remoteCalls[0]?.[1] === '/polish --strong --style=general 草稿', JSON.stringify(remoteCalls[0]?.[1]))
+    remoteCalls[0]?.[1] === '/polish --strong 草稿', JSON.stringify(remoteCalls[0]?.[1]))
 }
 
 // 8f. a typed /polish fills an empty draft through the local completion event
@@ -458,7 +457,7 @@ function panelText(options) {
   const { tree } = render({ draft: 'aaa bbb', actions })
   await sparkleButton(tree).props.onClick()
   check('a selection sends only the selected text',
-    remoteCalls[0]?.[1] === '/polish --medium --style=general bbb', JSON.stringify(remoteCalls[0]?.[1]))
+    remoteCalls[0]?.[1] === '/polish --medium bbb', JSON.stringify(remoteCalls[0]?.[1]))
   applyPending({ draft: 'aaa bbb', actions })
   check('a selection replaces its span instead of the draft',
     inserts.length === 1 && inserts[0][1] === span && setDraftCalls.length === 0, JSON.stringify(inserts))
@@ -651,24 +650,6 @@ function panelText(options) {
 
   executeImpl = async () => ({ ok: true, value: { result: { kind: 'success', text: '改写结果' } } })
   store.delete('prompt-hone.locale')
-}
-
-// 8r. style cycling and the diff rows the preview renders
-{
-  resetSlots(); store.clear(); setDraftCalls.length = 0; remoteCalls.length = 0
-  const { tree } = render()
-  const styleChip = findButton(tree, node => (node.props?.['aria-label'] ?? '').startsWith('风格'))
-  check('a style chip is rendered', styleChip !== undefined)
-  if (styleChip !== undefined) styleChip.props.onClick()
-  check('the style choice is remembered', store.get('prompt-hone.style') === 'social', String(store.get('prompt-hone.style')))
-
-  const { tree: after } = render()
-  await sparkleButton(after).props.onClick()
-  check('the chosen style reaches the command',
-    remoteCalls[0]?.[1] === '/polish --medium --style=social 把这段改得更有说服力', JSON.stringify(remoteCalls[0]?.[1]))
-  const preview = panelText()
-  check('the preview marks added lines', preview.includes('+ 改写结果'), preview.slice(-80))
-  store.delete('prompt-hone.style')
 }
 
 // 9. disabled states

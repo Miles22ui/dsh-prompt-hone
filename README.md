@@ -45,9 +45,8 @@ changes; do not move or rename the directory afterwards.
 | | |
 |---|---|
 | **Polish** | Write a draft, click **✨** next to Send. |
-| **Preview first** | The rewrite opens as a diff under the composer with a structure score; **Apply** or **Discard**. |
+| **Preview first** | The rewrite opens as plain text under the composer; **Apply** or **Discard**. |
 | **Strength** | Click the **中 / 轻 / 重** chip next to ✨ (remembered across reloads). |
-| **Style** | The chip after it cycles 通用 / 社媒 / 汇报 / 代码 / 翻译 / 教学. |
 | **History** | The **⟲** chip lists the last 8 applied rewrites, each restorable to its original. |
 | **One passage** | Select text first: only the selection is rewritten, undoable with Ctrl+Z / Cmd+Z. |
 | **Stop** | Click ✨ again while it is spinning; a 60 s deadline also applies. |

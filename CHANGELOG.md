@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.11.0
+
+Narrowed back to the one job, after living with 0.10 for a few minutes.
+
+- **Style presets removed.** Six presets for social posts, reports, code and teaching are noise for research work;
+  the strength dial is the only knob again.
+- **The preview is plain text.** The coloured line diff and the five-point structure score are gone: the panel now
+  shows the rewrite as text with **Apply** / **Discard**, plus its character count.
+- **The Apply button is visible.** It was a filled block keyed to a theme token that resolved to a pale colour,
+  leaving the label unreadable; it is now an outlined button whose border follows the text colour, so it reads in
+  every theme.
+
+
 ## 0.10.1
 
 - The history panel gains **Clear**: the last eight rewrites are stored in this browser, text included, so they need
