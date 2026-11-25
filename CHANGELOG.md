@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0
+
+Back to one click: the 0.10 line is removed.
+
+- **Preview-then-apply is gone.** Clicking ✨ rewrites the draft directly again, with the inline **撤销** to restore
+  the previous text. Fewer states, fewer clicks.
+- **History is gone.** No panel, no stored drafts.
+- **Style presets stay gone** (removed in 0.11.0).
+- What remains is the core: strength dial, selection polish, reference-chip guard, cancel/timeout, token usage,
+  the settings card, and the bilingual interface.
+- The one-time cleanup on load removes the `prompt-hone.history` and `prompt-hone.style` keys that 0.10 left in
+  browsers — the history held draft text, so it should not linger.
+
+
 ## 0.11.1
 
 - The preview panel sits directly under the composer again. The dock is shared with the cost meter, which registers

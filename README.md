@@ -44,10 +44,8 @@ changes; do not move or rename the directory afterwards.
 
 | | |
 |---|---|
-| **Polish** | Write a draft, click **✨** next to Send. |
-| **Preview first** | The rewrite opens as plain text under the composer; **Apply** or **Discard**. |
+| **Polish** | Write a draft, click **✨** next to Send. The draft is replaced; a **撤销** button restores it. |
 | **Strength** | Click the **中 / 轻 / 重** chip next to ✨ (remembered across reloads). |
-| **History** | The **⟲** chip lists the last 8 applied rewrites, each restorable to its original. |
 | **One passage** | Select text first: only the selection is rewritten, undoable with Ctrl+Z / Cmd+Z. |
 | **Stop** | Click ✨ again while it is spinning; a 60 s deadline also applies. |
 | **Keyboard** | `/polish --strong <draft>` ⏎ — the composer clears, then the rewrite is filled back in. |
@@ -104,7 +102,6 @@ against version drift (a stale `commit` or an unbumped `version` fails CI instea
   「通道不可用」 rather than failing silently. `engines.dsh` gates installs.
 - Reference chips are not preserved; the plugin refuses instead.
 - Each run is one real model request and is billed as such; the draft is sent to the selected provider.
-- The last eight applied rewrites are kept in this browser's localStorage, text included; clear them from the ⟲ panel.
 - The draft travels as a `/polish` command argument, so it is recorded in the Session log even when you
   never send it. That keeps the auxiliary request reconstructable from the log (a DSH invariant); if you
   would rather not have drafts persisted, do not polish confidential text.

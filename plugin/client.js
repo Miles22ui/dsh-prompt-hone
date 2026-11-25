@@ -18,6 +18,15 @@ window.__ModuleLoader__.load({
     const { useEffect, useRef, useState } = React
     const h = React.createElement
 
+    // 0.10 kept a style choice and a rewrite history in localStorage; both are
+    // gone, and the history held draft text, so clear the leftovers once.
+    try {
+      window.localStorage.removeItem('prompt-hone.history')
+      window.localStorage.removeItem('prompt-hone.style')
+    } catch (_error) {
+      // Private mode or an older runtime without removeItem: nothing to clear.
+    }
+
     /** The only composer phase in which a programmatic draft write is accepted. */
     const IDLE = 'plain'
 
@@ -84,10 +93,6 @@ window.__ModuleLoader__.load({
         timeoutHint: '5–600，超时即取消并提示', hostOnly: '以下只在 Host 侧生效，改 profile 的 cordis.patch.yml：',
         copySnippet: '复制配置片段', saved: '已保存', copied: '已复制配置片段', copyFailed: '复制失败，请手动选中',
         langAuto: '自动', langZh: '中文', langEn: 'English',
-        preview: '改写结果', apply: '应用', discard: '放弃', applied: '已应用', characters: '{n} 字',
-        history: '历史', historyTitle: '最近记录', historyEmpty: '还没有应用过',
-        restoreOriginal: '恢复原稿', clearHistory: '清空', close: '关闭',
-        previewStale: '草稿已变，请重新润色', restoreDone: '已恢复原稿',
         failureGeneric: '润色失败',
         strength: { light: '轻', medium: '中', strong: '重' },
         failure: {
@@ -117,10 +122,6 @@ window.__ModuleLoader__.load({
         timeoutHint: '5–600; on timeout the request is cancelled', hostOnly: 'Host-side only — edit cordis.patch.yml in the profile:',
         copySnippet: 'Copy snippet', saved: 'Saved', copied: 'Snippet copied', copyFailed: 'Copy failed, select it manually',
         langAuto: 'Auto', langZh: '中文', langEn: 'English',
-        preview: 'Rewrite', apply: 'Apply', discard: 'Discard', applied: 'Applied', characters: '{n} chars',
-        history: 'History', historyTitle: 'Recent', historyEmpty: 'Nothing applied yet',
-        restoreOriginal: 'Restore original', clearHistory: 'Clear', close: 'Close',
-        previewStale: 'The draft changed — polish again', restoreDone: 'Original restored',
         failureGeneric: 'Polishing failed',
         strength: { light: 'Light', medium: 'Medium', strong: 'Strong' },
         failure: {
@@ -179,68 +180,6 @@ window.__ModuleLoader__.load({
       if (message === undefined) return body
       const detail = code === 'FAILED' || code === 'PROVIDER_FAILED' ? FAILURE_DETAIL.exec(body) : null
       return detail === null ? message : `${message} (${detail[1]})`
-    }
-
-    /** Recent rewrites, newest first; kept small because it holds draft text. */
-    const HISTORY_KEY = 'prompt-hone.history'
-    const HISTORY_LIMIT = 8
-
-    function readHistory() {
-      try {
-        const raw = window.localStorage.getItem(HISTORY_KEY)
-        const parsed = raw === null ? [] : JSON.parse(raw)
-        return Array.isArray(parsed) ? parsed.slice(0, HISTORY_LIMIT) : []
-      } catch (_error) {
-        return []
-      }
-    }
-
-    /**
-     * Forget every stored rewrite.
-     */
-    function clearHistory() {
-      try { window.localStorage.removeItem(HISTORY_KEY) } catch (_error) { /* private mode */ }
-    }
-
-    /**
-     * Prepend one applied rewrite.
-     * @param entry - { at, strength, style, original, polished, tokens }.
-     * @returns the new list.
-     */
-    function pushHistory(entry) {
-      const next = [entry, ...readHistory()].slice(0, HISTORY_LIMIT)
-      try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch (_error) { /* quota */ }
-      return next
-    }
-
-    /**
-     * One tiny observable map, so the composer control and the panel share state.
-     * @returns a store keyed by Session id.
-     */
-    function createStore() {
-      const values = new Map()
-      const listeners = new Set()
-      const notify = () => { for (const listener of [...listeners]) listener() }
-      return {
-        get: key => values.get(key),
-        set: (key, value) => { values.set(key, value); notify() },
-        patch: (key, patch) => { values.set(key, { ...(values.get(key) ?? {}), ...patch }); notify() },
-        subscribe: listener => { listeners.add(listener); return () => listeners.delete(listener) },
-      }
-    }
-
-    /** Pending preview and panel visibility, per Session. */
-    const viewStore = createStore()
-
-    const VIEW_DEFAULT = { pending: null, historyOpen: false }
-
-    /**
-     * Read one Session's panel state.
-     * @param sessionId - Session id.
-     * @returns the state, never undefined.
-     */
-    function viewOf(sessionId) {
-      return viewStore.get(sessionId) ?? VIEW_DEFAULT
     }
 
     /**
@@ -448,6 +387,7 @@ window.__ModuleLoader__.load({
         const [busy, setBusy] = useState(false)
         const [strength, setStrength] = useState(readStrength)
         const [error, setError] = useState(null)
+        const [previous, setPrevious] = useState(null)
         const [detail, setDetail] = useState(null)
         const [usage, setUsage] = useState(null)
         const [localePref, setLocalePref] = useState(readLocalePref)
@@ -563,6 +503,7 @@ window.__ModuleLoader__.load({
           setBusy(true)
           setError(null)
           setDetail(null)
+          setPrevious(null)
           let step = 'remote'
           try {
             const resolved = commandsOf(holder, ctx)
@@ -601,17 +542,15 @@ window.__ModuleLoader__.load({
               setError(t(locale, 'changed'))
               return
             }
-            // Nothing is written yet: the panel shows a diff, the reader decides.
-            viewStore.patch(sessionId, {
-              pending: {
-                original: sent,
-                polished: result.text,
-                span: hasSelection ? span : null,
-                strength: current.id,
-                at: Date.now(),
-              },
-              historyOpen: false,
-            })
+            if (hasSelection) {
+              // insertText is one native undo step and carries its own revision check.
+              const applied = actionsRef.current.insertText(result.text, span)
+              if (!applied) setError(t(locale, 'changed'))
+              else setPrevious(null)
+            } else {
+              setPrevious(sent)
+              actionsRef.current.setDraft(result.text)
+            }
             void refreshUsage()
           } catch (reason) {
             if (controller.signal.aborted) {
@@ -626,6 +565,13 @@ window.__ModuleLoader__.load({
             abortRef.current = null
             setBusy(false)
           }
+        }
+
+        const undo = () => {
+          if (previous === null) return
+          inputActions.setDraft(previous)
+          setPrevious(null)
+          setError(null)
         }
 
         return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 } },
@@ -670,16 +616,15 @@ window.__ModuleLoader__.load({
               fontSize: 11, opacity: usable ? 0.65 : 0.35, padding: '0 2px', flex: '0 0 auto',
             },
           }, strengthLabel(locale, current.id)),
-          h('button', {
+          previous === null ? null : h('button', {
             type: 'button',
-            onClick: () => viewStore.patch(sessionId, { historyOpen: !viewOf(sessionId).historyOpen }),
-            title: t(locale, 'history'),
-            'aria-label': t(locale, 'history'),
+            onClick: undo,
+            title: t(locale, 'undoTitle'),
             style: {
               border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer',
-              fontSize: 11, opacity: 0.6, padding: '0 2px', flex: '0 0 auto',
+              fontSize: 11, opacity: 0.7, padding: 0, flex: '0 0 auto',
             },
-          }, '⟲'),
+          }, t(locale, 'undo')),
           error === null ? null : h('span', {
             role: 'status',
             title: detail ?? error,
@@ -822,125 +767,6 @@ window.__ModuleLoader__.load({
       }
     }
 
-
-    /**
-     * Panel below the composer: preview a rewrite before it lands, or browse the
-     * rewrites that were applied.
-     * @returns the dock component.
-     */
-    function createPanel() {
-      const mono = { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }
-      const pill = {
-        fontSize: 11, padding: '2px 7px', borderRadius: 999,
-        border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,.35))', opacity: 0.8,
-      }
-      const button = {
-        fontSize: 12, padding: '3px 10px', borderRadius: 8, cursor: 'pointer',
-        border: '1px solid var(--dsw-alias-border-l2, rgba(127,127,127,.35))',
-        background: 'transparent', color: 'inherit',
-      }
-      const primary = {
-        ...button, fontWeight: 700, padding: '3px 12px',
-        borderColor: 'currentColor', borderWidth: 1,
-      }
-
-      return function PromptHonePanel(props) {
-        const { useInput, inputActions, sessionId } = props
-        const [view, setView] = useState(() => ({ ...viewOf(sessionId) }))
-        const [note, setNote] = useState(null)
-        const [localePref, setLocalePref] = useState(readLocalePref)
-        const locale = resolveLocale(localePref)
-        const draft = useInput(state => state.draft)
-        const liveDraft = useRef(draft)
-        liveDraft.current = draft
-
-        useEffect(() => {
-          const unsubscribe = viewStore.subscribe(() => setView({ ...viewOf(sessionId) }))
-          setView({ ...viewOf(sessionId) })
-          return unsubscribe
-        }, [sessionId])
-        useEffect(() => {
-          const onLocale = (event) => {
-            const next = event?.detail
-            if (LOCALES.includes(next)) setLocalePref(next)
-          }
-          try { window.addEventListener(LOCALE_EVENT, onLocale) } catch (_error) { /* no window */ }
-          return () => {
-            try { window.removeEventListener(LOCALE_EVENT, onLocale) } catch (_error) { /* no window */ }
-          }
-        }, [])
-
-        const pending = view.pending ?? null
-        const history = readHistory()
-        if (pending === null && view.historyOpen !== true) return null
-
-
-        const close = () => { setNote(null); viewStore.patch(sessionId, { pending: null, historyOpen: false }) }
-        const wipeHistory = () => { clearHistory(); viewStore.patch(sessionId, {}) }
-        const apply = () => {
-          if (pending === null) return
-          if (liveDraft.current !== pending.original) { setNote(t(locale, 'previewStale')); return }
-          let applied
-          if (pending.span !== null && pending.span !== undefined) {
-            applied = inputActions.insertText(pending.polished, pending.span)
-          } else {
-            inputActions.setDraft(pending.polished)
-            applied = true
-          }
-          if (!applied) { setNote(t(locale, 'previewStale')); return }
-          pushHistory({
-            at: pending.at, strength: pending.strength,
-            original: pending.original, polished: pending.polished,
-          })
-          viewStore.patch(sessionId, { pending: null })
-          setNote(t(locale, 'applied'))
-        }
-        const restore = entry => {
-          inputActions.setDraft(entry.original)
-          setNote(t(locale, 'restoreDone'))
-        }
-
-        const header = h('div', { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 } },
-          h('strong', { style: { fontSize: 12 } }, pending === null ? t(locale, 'historyTitle') : t(locale, 'preview')),
-          pending === null ? null : h('span', { style: pill }, t(locale, 'characters', { n: pending.polished.length })),
-          h('span', { style: { flex: 1 } }),
-          pending === null && history.length > 0
-            ? h('button', { type: 'button', onClick: wipeHistory, style: { ...button, padding: '2px 8px' } },
-              t(locale, 'clearHistory'))
-            : null,
-          note === null ? null : h('span', { role: 'status', style: { fontSize: 11, opacity: 0.75 } }, note),
-          h('button', { type: 'button', onClick: close, style: { ...button, padding: '2px 8px' } }, t(locale, 'close')))
-
-        const body = pending === null
-          ? (history.length === 0
-            ? h('div', { style: { fontSize: 12, opacity: 0.6 } }, t(locale, 'historyEmpty'))
-            : h('div', { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
-              ...history.map(entry => h('div', {
-                key: String(entry.at),
-                style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, opacity: 0.9 },
-              },
-              h('span', { style: pill }, new Date(entry.at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })),
-              h('span', { style: { ...mono, opacity: 0.6 } }, entry.polished.replace(/\s+/g, ' ').slice(0, 48)),
-              h('span', { style: { flex: 1 } }),
-              h('button', { type: 'button', onClick: () => restore(entry), style: { ...button, padding: '1px 8px' } },
-                t(locale, 'restoreOriginal'))))))
-          : h('pre', {
-            style: {
-              ...mono, fontSize: 12, lineHeight: 1.6, margin: 0, padding: 8, borderRadius: 8,
-              maxHeight: 240, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-              background: 'var(--dsw-alias-bg-layer-2, rgba(127,127,127,.08))',
-            },
-          }, pending.polished)
-
-        return h('div', { style: { padding: '8px 10px', fontSize: 12 } },
-          header,
-          body,
-          pending === null ? null : h('div', { style: { display: 'flex', gap: 8, marginTop: 8 } },
-            h('button', { type: 'button', onClick: apply, style: primary }, t(locale, 'apply')),
-            h('button', { type: 'button', onClick: close, style: button }, t(locale, 'discard'))))
-      }
-    }
-
     return {
       inject: ['slots', 'remote'],
       apply(ctx) {
@@ -989,23 +815,10 @@ window.__ModuleLoader__.load({
             try { entry.fail(t(locale, 'changedNoFill')) } catch (_error) { /* control unmounted */ }
             return
           }
-          viewStore.patch(sessionId, {
-            pending: {
-              original: current, polished: result.text, span: null,
-              strength: 'medium', at: Date.now(),
-            },
-            historyOpen: false,
-          })
+          try { entry.write(result.text) } catch (reason) {
+            console.warn('[prompt-hone] could not fill the draft after a typed command:', reason)
+          }
         })
-        const Panel = createPanel()
-        // The dock is shared with the cost meter (orders 5 and 9); a lower order
-        // keeps this panel directly under the composer instead of below the
-        // session statistics strip.
-        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
-          name: 'conversation.composer.dock',
-          id: 'prompt-hone-panel',
-          order: 1,
-        }, Panel))
         const Control = createControl(holder, ctx, writers)
         ctx.slots.inject('conversation.input.right', () => ctx.slots.register({
           name: 'conversation.input.right',

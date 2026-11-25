@@ -11,9 +11,7 @@
 
 ✨ 右侧的 **中 / 轻 / 重** 是强度档，点击切换并记住选择。界面语言可在 Plugins 详情页的配置卡里切换（自动 / 中文 / English）。
 
-- **先预览**：结果不会直接覆盖，输入框下方显示改写文本，由你点「应用」或「放弃」
 - **只润一段**：选中文字再点 ✨，只替换选区（编辑器原生撤销）
-- **历史**：点 ⟲ 查看最近 8 次已应用的改写，可恢复原稿
 - **取消**：润色中再点一次 ✨；60 秒无返回自动超时
 - **键盘**：`/polish --strong <草稿>`，结果自动填回输入框；失败会在按钮旁显示原因
 - **用量**：成功后悬停 ✨ 可看上次的输入/输出 token（Host 的 `--stats` 回答，不调模型）
@@ -66,9 +64,7 @@ Nothing reaches the model unless you send it.
 The **light / medium / strong** chip next to ✨ switches strength (remembered across reloads).
 The interface language (Auto / 中文 / English) is on the plugin's page under **Plugins**.
 
-- **Preview first** — the rewrite opens as plain text under the composer; **Apply** or **Discard**
 - **Selection only** — select text first and only that passage is rewritten (native Ctrl/Cmd+Z)
-- **History** — the ⟲ chip lists the last 8 applied rewrites, each restorable
 - **Cancel** — click ✨ again while it runs; a 60 s deadline also applies
 - **Keyboard** — `/polish --strong <draft>`: the composer clears, then the rewrite is filled back in
 - **Usage** — hover ✨ after a run for the last call's input/output tokens (a Host `--stats` read, no model call)
