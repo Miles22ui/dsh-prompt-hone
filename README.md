@@ -8,6 +8,8 @@ sentence you were about to send becomes a structured, executable prompt. Plus a 
 
 [![ci](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
+![Before and after: the composer draft, then the rewritten prompt with undo beside the sparkle](docs/demo.png)
+
 ## Why a plugin, not just a skill
 
 A skill can rewrite a prompt **in the chat**, but it cannot touch what you are typing. This plugin

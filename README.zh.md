@@ -7,6 +7,8 @@
 
 [![ci](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml/badge.svg)](https://github.com/Miles22ui/dsh-prompt-hone/actions/workflows/ci.yml) ![dsh](https://img.shields.io/badge/tested%20on-DSH%200.2.2--rc.5-blue)
 
+![改前与改后：输入框里的草稿，以及改写后的结构化提示词（旁边有撤销）](docs/demo.png)
+
 ## 为什么是插件，而不只是 skill
 
 skill 能在**对话里**改写提示词，但改不了你正在打字的那段文字。这个插件直接替换输入框内容并留在原地——
