@@ -26,7 +26,7 @@ The `skill/` in this repository is the same rules, packaged for agents that have
 1. DSH → **Plugins** → **Discover**
 2. Add this index URL: `https://miles22ui.github.io/dsh-prompt-hone/market/index.json`
    (fallback host: `https://raw.githubusercontent.com/Miles22ui/dsh-prompt-hone/main/market/index.json`)
-3. Install **Prompt polisher** from the list.
+3. Install **Prompt hone** from the list.
 
 The market pins the release commit (`git+https://github.com/Miles22ui/dsh-prompt-hone.git#8574e2c…&path:/plugin`),
 so updates arrive only when the index announces them.
@@ -56,7 +56,7 @@ whole-draft replacement drops those chips.
 
 ## Settings
 
-**Plugins → Prompt polisher → details** carries a configuration card:
+**Plugins → Prompt hone → details** carries a configuration card:
 
 - editable: **interface language** (Auto / 中文 / English — Auto follows the browser), default strength,
   client timeout (5–600 s); saved in the browser;

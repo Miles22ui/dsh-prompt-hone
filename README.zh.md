@@ -23,7 +23,7 @@ skill 能在**对话里**改写提示词，但改不了你正在打字的那段�
 1. DSH → **Plugins** → **Discover**
 2. 添加索引地址：`https://miles22ui.github.io/dsh-prompt-hone/market/index.json`
    （备用地址：`https://raw.githubusercontent.com/Miles22ui/dsh-prompt-hone/main/market/index.json`）
-3. 在列表里安装 **提示词润色器**
+3. 在列表里安装 **提示词打磨器**
 
 市场安装的是**被 pin 住的某个提交**（`git+https://github.com/Miles22ui/dsh-prompt-hone.git#8574e2c…&path:/plugin`），
 所以只有索引宣告新版本时才会更新。
