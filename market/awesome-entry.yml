@@ -8,8 +8,14 @@
 # No `icon` on purpose: that field requires a GitHub-hosted raster image, and this
 # package ships an SVG. Omitting it falls back to the owner's avatar.
 
-url: https://github.com/Miles22ui/dsh-prompt-hone
-name: Miles22ui/dsh-prompt-hone
+# The bundle manifest lives in plugin/, not at the repository root, so the entry
+# points at that subpackage: the market then installs
+# `github:Miles22ui/dsh-prompt-hone#path:/plugin`. The submission gate fails an
+# entry whose url resolves to a root package.json without `dsh.bundle`.
+#
+# Upstream filename rule: slugFor('…/tree/main/plugin') → Miles22ui__dsh-prompt-hone--plugin
+url: https://github.com/Miles22ui/dsh-prompt-hone/tree/main/plugin
+name: Miles22ui/dsh-prompt-hone#plugin
 category: ui
 description:
   en: "Composer prompt polisher: one click on the sparkle beside Send rewrites the current draft into a structured, executable prompt in place, with one-click undo. Polishes only the selected passage when text is selected, offers a light/medium/strong dial, cancels on a second click, refuses drafts that contain reference chips instead of dropping them, and shows the last call's token usage. It uses the Session's own model and sends nothing unless you send it."
